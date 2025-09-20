@@ -1,4 +1,12 @@
-import { Status, PaymentInterval, CurrencyCode, BaseRequest, BaseResponse, SimpleResponse, PaginatedData } from './core';
+import {
+  Status,
+  PaymentInterval,
+  CurrencyCode,
+  BaseRequest,
+  BaseResponse,
+  SimpleResponse,
+  PaginatedData,
+} from './core';
 
 /**
  * Payment plan specific payment type
@@ -7,18 +15,21 @@ export enum PlanPaymentType {
   RECURRING = 'RECURRING',
 }
 /**
- * Request payload for creating a new payment plan
+ * Base payment plan data structure with typed enums
  */
-export interface CreatePaymentPlanRequest extends BaseRequest {
+export interface BasePaymentPlanData {
+  referenceCode: string;
+  createdDate: number;
   name: string;
-  productReferenceCode: string;
-  recurrenceCount?: number;
-  planPaymentType: PlanPaymentType;
-  trialPeriodDays?: number;
-  paymentIntervalCount: number;
-  paymentInterval: PaymentInterval;
-  currencyCode: CurrencyCode;
   price: number;
+  paymentInterval: PaymentInterval;
+  paymentIntervalCount: number;
+  trialPeriodDays: number;
+  currencyCode: CurrencyCode;
+  productReferenceCode: string;
+  planPaymentType: PlanPaymentType;
+  status: Status;
+  recurrenceCount?: number;
 }
 
 /**
@@ -40,57 +51,8 @@ export interface PaymentPlanData {
 }
 
 /**
- * Response data when creating or retrieving a payment plan
+ * Pricing plan data structure
  */
-export interface PaymentPlanResponse extends BaseResponse<PaymentPlanData> {}
-
-/**
- * Base payment plan data structure with typed enums
- */
-export interface BasePaymentPlanData {
-  referenceCode: string;
-  createdDate: number;
-  name: string;
-  price: number;
-  paymentInterval: PaymentInterval;
-  paymentIntervalCount: number;
-  trialPeriodDays: number;
-  currencyCode: CurrencyCode;
-  productReferenceCode: string;
-  planPaymentType: PlanPaymentType;
-  status: Status;
-  recurrenceCount?: number;
-}
-
-/**
- * Request payload for updating an existing payment plan
- */
-export interface UpdatePaymentPlanRequest extends BaseRequest {
-  name: string;
-  pricingPlanReferenceCode: string;
-  trialPeriodDays?: number;
-}
-
-/**
- * Response data when updating a payment plan
- */
-export interface UpdatePaymentPlanResponse extends BaseResponse<BasePaymentPlanData> {}
-
-/**
- * Response data when deleting a payment plan
- */
-export interface DeletePaymentPlanResponse extends SimpleResponse {}
-
-/**
- * Response data when retrieving a single payment plan
- */
-export interface GetPaymentPlanResponse extends BaseResponse<BasePaymentPlanData> {}
-
-/**
- * Response data when listing payment plans with pagination
- */
-export interface ListPaymentPlansResponse extends BaseResponse<PaginatedData<BasePaymentPlanData>> {}
-
 export interface PricingPlan {
   referenceCode: string;
   name: string;
@@ -105,3 +67,60 @@ export interface PricingPlan {
   status: Status;
   createdDate: number;
 }
+
+/**
+ * Request payload for creating a new payment plan
+ */
+export interface CreatePaymentPlanRequest extends BaseRequest {
+  name: string;
+  productReferenceCode: string;
+  recurrenceCount?: number;
+  planPaymentType: PlanPaymentType;
+  trialPeriodDays?: number;
+  paymentIntervalCount: number;
+  paymentInterval: PaymentInterval;
+  currencyCode: CurrencyCode;
+  price: number;
+}
+
+/**
+ * Request payload for updating an existing payment plan
+ */
+export interface UpdatePaymentPlanRequest extends BaseRequest {
+  name: string;
+  pricingPlanReferenceCode: string;
+  trialPeriodDays?: number;
+}
+
+/**
+ * Request payload for creating a new pricing plan
+ */
+export interface CreatePricingPlanRequest extends BaseRequest {}
+
+/**
+ * Response data when creating or retrieving a payment plan
+ */
+export interface PaymentPlanResponse extends BaseResponse<PaymentPlanData> {}
+
+/**
+ * Response data when updating a payment plan
+ */
+export interface UpdatePaymentPlanResponse
+  extends BaseResponse<BasePaymentPlanData> {}
+
+/**
+ * Response data when deleting a payment plan
+ */
+export interface DeletePaymentPlanResponse extends SimpleResponse {}
+
+/**
+ * Response data when retrieving a single payment plan
+ */
+export interface GetPaymentPlanResponse
+  extends BaseResponse<BasePaymentPlanData> {}
+
+/**
+ * Response data when listing payment plans with pagination
+ */
+export interface ListPaymentPlansResponse
+  extends BaseResponse<PaginatedData<BasePaymentPlanData>> {}
