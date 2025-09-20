@@ -1,0 +1,1 @@
+# iyzico-subscription-ts-private

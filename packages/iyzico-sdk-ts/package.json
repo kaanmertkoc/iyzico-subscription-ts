@@ -1,0 +1,19 @@
+{
+  "name": "@kaanmertkoc/iyzico-ts",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}

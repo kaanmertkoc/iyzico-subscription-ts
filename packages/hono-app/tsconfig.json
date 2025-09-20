@@ -1,0 +1,56 @@
+{
+  "compilerOptions": {
+    // Target and Module Settings (Web App Optimized)
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
+
+    // Output Settings (No need for declarations in app)
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "sourceMap": true,
+
+    // Strict Type Checking
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "exactOptionalPropertyTypes": true,
+
+    // Module Resolution (App-specific)
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+
+    // Development Experience
+    "skipLibCheck": true,
+    "allowJs": false,
+    "checkJs": false,
+
+    // Emit Options
+    "noEmitOnError": true,
+    "preserveWatchOutput": true,
+
+    // Bun & Hono Support
+    "types": ["bun-types"],
+    "allowImportingTsExtensions": false,
+    "verbatimModuleSyntax": false,
+
+    // Path Mapping for Workspace Dependencies
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

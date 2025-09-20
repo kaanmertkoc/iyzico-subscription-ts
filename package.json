@@ -1,0 +1,8 @@
+{
+    "name": "iyzico-bun-starter",
+    "private": true,
+    "workspaces": ["packages/*"],
+    "scripts": {
+      "dev": "bun --cwd packages/hono-app run dev"
+    }
+  }

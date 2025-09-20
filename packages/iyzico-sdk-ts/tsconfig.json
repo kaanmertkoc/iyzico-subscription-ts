@@ -1,0 +1,54 @@
+{
+  "compilerOptions": {
+    // Target and Module Settings (Node.js 18+ Compatible)
+    "target": "ES2022",
+    "module": "ESNext", 
+    "moduleResolution": "Node",
+    "lib": ["ES2022", "DOM"],
+
+    // Output Settings (Library Publishing)
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+
+    // Strict Type Checking
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "exactOptionalPropertyTypes": true,
+
+    // Module Resolution (Universal Compatibility)
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+
+    // Advanced Options
+    "skipLibCheck": true,
+    "allowJs": false,
+    "checkJs": false,
+
+    // Emit Options
+    "noEmitOnError": true,
+    "preserveWatchOutput": true,
+
+    // Node.js Built-in Module Support
+    "types": ["node"],
+    "allowImportingTsExtensions": false,
+    "verbatimModuleSyntax": false
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ]
+}
