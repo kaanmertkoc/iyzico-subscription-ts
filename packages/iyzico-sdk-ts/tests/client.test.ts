@@ -1,5 +1,5 @@
 import { vi, test, expect, describe, afterEach, beforeEach } from 'vitest';
-import { IyzicoClient, IyzicoApiError, IyzicoNetworkError } from './client';
+import { IyzicoClient, IyzicoApiError, IyzicoNetworkError } from '../src/client';
 
 // Mock fetch globally
 globalThis.fetch = vi.fn();
