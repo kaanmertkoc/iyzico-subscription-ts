@@ -17,6 +17,8 @@ export interface IyzicoClientOptions extends IyzicoOptions {
   maxRetries?: number;
   /** Enable debug logging (default: false) */
   debug?: boolean;
+  /** Use sandbox environment instead of production (default: false) */
+  isSandbox?: boolean;
 }
 
 /**
@@ -71,11 +73,21 @@ export class IyzicoNetworkError extends Error {
  *
  * @example
  * ```typescript
+ * // Production client
  * const iyzico = new IyzicoClient({
- *   apiKey: 'your-api-key',
- *   secretKey: 'your-secret-key',
+ *   apiKey: 'your-live-api-key',
+ *   secretKey: 'your-live-secret-key',
+ *   isSandbox: false, // Use production environment
  *   debug: true, // Enable logging
  *   timeout: 10000 // 10 second timeout
+ * });
+ *
+ * // Sandbox client for testing
+ * const sandboxIyzico = new IyzicoClient({
+ *   apiKey: 'your-sandbox-api-key',
+ *   secretKey: 'your-sandbox-secret-key',
+ *   isSandbox: true, // Use sandbox environment
+ *   debug: true
  * });
  *
  * const product = await iyzico.products.create({
@@ -112,12 +124,18 @@ export class IyzicoClient {
       throw new Error('Iyzico Secret Key is required and cannot be empty.');
     }
 
+    // Determine the appropriate base URL based on environment
+    const defaultBaseUrl = options.isSandbox
+      ? 'https://sandbox-merchant.iyzipay.com' // Sandbox environment
+      : 'https://api.iyzipay.com'; // Production environment
+
     // Set defaults and validate options
     this.options = {
-      baseUrl: 'https://api.iyzipay.com',
+      baseUrl: defaultBaseUrl,
       timeout: 30000, // 30 seconds
       maxRetries: 3,
       debug: false,
+      isSandbox: options.isSandbox || false,
       ...options,
     };
 
@@ -143,6 +161,8 @@ export class IyzicoClient {
         baseUrl: this.options.baseUrl,
         timeout: this.options.timeout,
         maxRetries: this.options.maxRetries,
+        isSandbox: this.options.isSandbox,
+        environment: this.options.isSandbox ? 'sandbox' : 'production',
         apiKey: `${this.options.apiKey.substring(0, 8)}...`,
       });
     }
@@ -340,6 +360,8 @@ export class IyzicoClient {
       timeout: this.options.timeout,
       maxRetries: this.options.maxRetries,
       debug: this.options.debug,
+      isSandbox: this.options.isSandbox,
+      environment: this.options.isSandbox ? 'sandbox' : 'production',
     };
   }
 }

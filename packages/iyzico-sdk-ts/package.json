@@ -4,8 +4,9 @@
   "main": "src/index.ts",
   "types": "src/index.ts",
   "scripts": {
-    "build": "tsc",
     "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "build": "tsc",
     "typecheck": "tsc --noEmit"
   },
   "engines": {
