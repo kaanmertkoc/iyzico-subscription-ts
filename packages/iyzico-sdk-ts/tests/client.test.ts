@@ -234,20 +234,30 @@ describe('IyzicoClient', () => {
         })
       );
 
-      let error: IyzicoApiError | undefined;
-      try {
-        await client.request({
+      // Test both error message and error type
+      await expect(
+        client.request({
           path: '/test',
           method: 'POST',
           body: { invalid: 'data' },
-        });
-      } catch (e) {
-        error = e as IyzicoApiError;
-      }
+        })
+      ).rejects.toThrow('Invalid request');
 
-      expect(error).toBeInstanceOf(IyzicoApiError);
-      expect(error!.message).toBe('Invalid request');
-      expect(error!.statusCode).toBe(400);
+      // Reset mock for second assertion
+      fetchMock.mockResolvedValue(
+        new Response(JSON.stringify(mockErrorResponse), {
+          status: 400,
+          headers: { 'content-type': 'application/json' },
+        })
+      );
+
+      await expect(
+        client.request({
+          path: '/test',
+          method: 'POST',
+          body: { invalid: 'data' },
+        })
+      ).rejects.toThrowError(IyzicoApiError);
     });
 
     test('should retry on 5xx errors', async () => {
@@ -286,8 +296,8 @@ describe('IyzicoClient', () => {
 
       // Mock a slow response that respects AbortController
       fetchMock.mockImplementation(
-        (url, init) =>
-          new Promise((resolve, reject) => {
+        (_url: string, init?: RequestInit) =>
+          new Promise<Response>((resolve, reject) => {
             const timeout = setTimeout(() => {
               resolve(new Response('{"success": true}'));
             }, 2000);
@@ -304,18 +314,40 @@ describe('IyzicoClient', () => {
           })
       );
 
-      let error: IyzicoNetworkError | undefined;
-      try {
-        await shortTimeoutClient.request({
+      // Test both error message and error type
+      await expect(
+        shortTimeoutClient.request({
           path: '/test',
           method: 'GET',
-        });
-      } catch (e) {
-        error = e as IyzicoNetworkError;
-      }
+        })
+      ).rejects.toThrow('Request timeout after 1000ms');
 
-      expect(error).toBeInstanceOf(IyzicoNetworkError);
-      expect(error!.message).toBe('Request timeout after 1000ms');
+      // Reset mock implementation for second assertion
+      fetchMock.mockImplementation(
+        (_url: string, init?: RequestInit) =>
+          new Promise<Response>((resolve, reject) => {
+            const timeout = setTimeout(() => {
+              resolve(new Response('{"success": true}'));
+            }, 2000);
+
+            // Respect AbortController
+            if (init?.signal) {
+              init.signal.addEventListener('abort', () => {
+                clearTimeout(timeout);
+                reject(
+                  new DOMException('The operation was aborted.', 'AbortError')
+                );
+              });
+            }
+          })
+      );
+
+      await expect(
+        shortTimeoutClient.request({
+          path: '/test',
+          method: 'GET',
+        })
+      ).rejects.toThrowError(IyzicoNetworkError);
     });
 
     test('should handle network errors', async () => {

@@ -202,7 +202,6 @@ describe('HealthService', () => {
       const binCheckRequest: BinCheckRequest = {
         binNumber: '554960',
         locale: 'en', // Custom locale
-        // Any other BaseRequest properties can be tested here
       };
 
       const mockResponse: BinCheckResponse = {
