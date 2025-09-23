@@ -1,10 +1,10 @@
 import { Hono } from 'hono';
 import { iyzico } from '../../lib/iyzico';
-import { validator, BinCheckQuerySchema } from '../../lib/validation-utils';
+import { validator, Schemas } from '../../lib/validation-utils';
 
 const healthRoutes = new Hono();
 
-healthRoutes.get('/bin', validator('query', BinCheckQuerySchema), async (c) => {
+healthRoutes.get('/bin', validator('query', Schemas.Query.bin), async (c) => {
   try {
     const { bin } = c.req.valid('query');
 

@@ -1,19 +1,15 @@
 import { Hono } from 'hono';
 import { iyzico } from '../../lib/iyzico';
-import {
-  validator,
-  UpgradeSubscriptionRequestSchema,
-  SubscriptionParamsSchema,
-  type UpgradeSubscriptionRequest,
-} from '../../lib/validation-utils';
+import { validator, Schemas } from '../../lib/validation-utils';
+import type { UpgradeSubscriptionRequest } from '@kaanmertkoc/iyzico-ts';
 
 const subscriptionsRoutes = new Hono();
 
 // UPGRADE Subscription - Using your exact SDK UpgradeSubscriptionRequest type!
 subscriptionsRoutes.put(
   '/:id/upgrade',
-  validator('param', SubscriptionParamsSchema),
-  validator('json', UpgradeSubscriptionRequestSchema),
+  validator('param', Schemas.Params.id),
+  validator('json', Schemas.UpgradeSubscription),
   async (c) => {
     try {
       const { id } = c.req.valid('param');
@@ -33,7 +29,7 @@ subscriptionsRoutes.put(
 // READ Subscription
 subscriptionsRoutes.get(
   '/:id',
-  validator('param', SubscriptionParamsSchema),
+  validator('param', Schemas.Params.id),
   async (c) => {
     try {
       const { id } = c.req.valid('param');
