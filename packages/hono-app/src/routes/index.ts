@@ -1,2 +1,14 @@
-// This file can be used to export all route modules
-// Currently using individual route imports in main index.ts
+import healthRoutes from './health';
+import productsRoutes from './products';
+import plansRoutes from './plans';
+import subscriptionsRoutes from './subscriptions';
+import { Hono } from 'hono';
+
+const baseRoutes = new Hono();
+
+baseRoutes.route('/health', healthRoutes);
+baseRoutes.route('/products', productsRoutes);
+baseRoutes.route('/plans', plansRoutes);
+baseRoutes.route('/subscriptions', subscriptionsRoutes);
+
+export default baseRoutes;

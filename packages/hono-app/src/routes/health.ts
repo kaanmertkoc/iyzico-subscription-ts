@@ -1,13 +1,10 @@
 import { Hono } from 'hono';
-import { z } from 'zod';
 import { iyzico } from '../../lib/iyzico';
-import { validator, V } from '../../lib/validation-utils';
+import { validator, BinCheckQuerySchema } from '../../lib/validation-utils';
 
 const healthRoutes = new Hono();
 
-const BinQuerySchema = z.object({ bin: V.binNumber });
-
-healthRoutes.get('/bin', validator('query', BinQuerySchema), async (c) => {
+healthRoutes.get('/bin', validator('query', BinCheckQuerySchema), async (c) => {
   try {
     const { bin } = c.req.valid('query');
 

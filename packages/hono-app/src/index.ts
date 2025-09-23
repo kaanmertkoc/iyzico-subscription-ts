@@ -1,11 +1,10 @@
 // Default Hono imports
 import { Hono } from 'hono';
-import { logger } from 'hono/logger';
 import { cors } from 'hono/cors';
+import { logger } from 'hono/logger';
 
 // Import routes
-import healthRoutes from './routes/health';
-import productsRoutes from './routes/products';
+import baseRoutes from './routes/index';
 
 const app = new Hono();
 
@@ -51,16 +50,19 @@ app.use(
 );
 
 // Register routes
-app.route('/api/health', healthRoutes);
-app.route('/api/products', productsRoutes);
+app.route('/api', baseRoutes);
 
 // Basic health check for the app itself
 app.get('/api/status', (c) => {
-  return c.json({ 
-    status: 'OK', 
+  return c.json({
+    status: 'OK',
     timestamp: Date.now(),
-    message: 'Hono app with Iyzico SDK is running' 
+    message: 'Hono app with Iyzico SDK is running',
   });
 });
 
-export default app;
+export default {
+  port: process.env.PORT || 3001,
+  fetch: app.fetch,
+  handler: app.fetch,
+};
