@@ -7,6 +7,9 @@ import { CheckoutService } from './services/checkout';
 import { SubscriptionsService } from './services/subscriptions';
 import { HealthService } from './services/health';
 
+export const IYZICO_BASE_URL = 'https://api.iyzipay.com';
+export const IYZICO_SANDBOX_BASE_URL = 'https://sandbox-merchant.iyzipay.com';
+
 /**
  * Configuration options for the Iyzico client
  */
@@ -62,7 +65,10 @@ export class IyzicoApiError extends Error {
  * Network or timeout related errors
  */
 export class IyzicoNetworkError extends Error {
-  constructor(message: string, public readonly cause?: Error) {
+  constructor(
+    message: string,
+    public readonly cause?: Error
+  ) {
     super(message);
     this.name = 'IyzicoNetworkError';
   }
@@ -97,7 +103,12 @@ export class IyzicoNetworkError extends Error {
  * ```
  */
 export class IyzicoClient {
-  private readonly options: Required<IyzicoClientOptions>;
+  private readonly options: Required<
+    Omit<IyzicoClientOptions, 'sandboxApiKey' | 'sandboxSecretKey'>
+  > & {
+    sandboxApiKey?: string;
+    sandboxSecretKey?: string;
+  };
 
   /** Service for managing products */
   public readonly products: ProductsService;
@@ -124,22 +135,25 @@ export class IyzicoClient {
       throw new Error('Iyzico Secret Key is required and cannot be empty.');
     }
 
-    if (!options.sandboxApiKey?.trim()) {
-      throw new Error(
-        'Iyzico Sandbox API Key is required and cannot be empty.'
-      );
-    }
+    // Validate sandbox keys only if sandbox mode is enabled
+    if (options.isSandbox) {
+      if (!options.sandboxApiKey?.trim()) {
+        throw new Error(
+          'Iyzico Sandbox API Key is required when isSandbox is enabled.'
+        );
+      }
 
-    if (!options.sandboxSecretKey?.trim()) {
-      throw new Error(
-        'Iyzico Sandbox Secret Key is required and cannot be empty.'
-      );
+      if (!options.sandboxSecretKey?.trim()) {
+        throw new Error(
+          'Iyzico Sandbox Secret Key is required when isSandbox is enabled.'
+        );
+      }
     }
 
     // Determine the appropriate base URL based on environment
     const defaultBaseUrl = options.isSandbox
-      ? 'https://sandbox-merchant.iyzipay.com' // Sandbox environment
-      : 'https://api.iyzipay.com'; // Production environment
+      ? IYZICO_SANDBOX_BASE_URL // Sandbox environment
+      : IYZICO_BASE_URL; // Production environment
 
     // Set defaults and validate options
     this.options = {
@@ -148,8 +162,6 @@ export class IyzicoClient {
       maxRetries: 3,
       debug: false,
       isSandbox: options.isSandbox || false,
-      sandboxApiKey: options.sandboxApiKey,
-      sandboxSecretKey: options.sandboxSecretKey,
       ...options,
     };
 
@@ -204,15 +216,28 @@ export class IyzicoClient {
     const requestBodyString = body ? JSON.stringify(body) : '';
     const requestId = `req_${Date.now()}_${Math.random()
       .toString(36)
-      .substr(2, 9)}`;
+      .slice(2, 11)}`;
+
+    // Runtime safety check for sandbox credentials
+    if (
+      this.options.isSandbox &&
+      (!this.options.sandboxApiKey || !this.options.sandboxSecretKey)
+    ) {
+      throw new IyzicoApiError(
+        'Sandbox mode is enabled but sandbox credentials are missing. Provide sandboxApiKey and sandboxSecretKey.',
+        400,
+        { error: 'MISSING_SANDBOX_CREDENTIALS' },
+        requestId
+      );
+    }
 
     // Generate authentication headers
     const headers = generateAuthHeaders({
       apiKey: this.options.isSandbox
-        ? this.options.sandboxApiKey
+        ? this.options.sandboxApiKey!
         : this.options.apiKey,
       secretKey: this.options.isSandbox
-        ? this.options.sandboxSecretKey
+        ? this.options.sandboxSecretKey!
         : this.options.secretKey,
       path,
       body: requestBodyString,

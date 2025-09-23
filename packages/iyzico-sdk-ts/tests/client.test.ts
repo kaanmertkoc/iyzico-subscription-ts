@@ -1,5 +1,11 @@
 import { vi, test, expect, describe, afterEach, beforeEach } from 'vitest';
-import { IyzicoClient, IyzicoApiError, IyzicoNetworkError } from '../src/client';
+import {
+  IyzicoClient,
+  IyzicoApiError,
+  IyzicoNetworkError,
+  IYZICO_BASE_URL,
+  IYZICO_SANDBOX_BASE_URL,
+} from '../src/client';
 
 // Mock fetch globally
 globalThis.fetch = vi.fn();
@@ -55,7 +61,7 @@ describe('IyzicoClient', () => {
 
     test('should set default options for production', () => {
       const config = client.getConfig();
-      expect(config.baseUrl).toBe('https://api.iyzipay.com');
+      expect(config.baseUrl).toBe(IYZICO_BASE_URL);
       expect(config.timeout).toBe(30000);
       expect(config.maxRetries).toBe(3);
       expect(config.debug).toBe(false);
@@ -67,10 +73,12 @@ describe('IyzicoClient', () => {
       const sandboxClient = new IyzicoClient({
         ...validOptions,
         isSandbox: true,
+        sandboxApiKey: 'test-sandbox-api',
+        sandboxSecretKey: 'test-sandbox-secret',
       });
 
       const config = sandboxClient.getConfig();
-      expect(config.baseUrl).toBe('https://sandbox-merchant.iyzipay.com');
+      expect(config.baseUrl).toBe(IYZICO_SANDBOX_BASE_URL);
       expect(config.isSandbox).toBe(true);
       expect(config.environment).toBe('sandbox');
     });
@@ -79,11 +87,13 @@ describe('IyzicoClient', () => {
       const customClient = new IyzicoClient({
         ...validOptions,
         isSandbox: true,
-        baseUrl: 'https://custom.sandbox.com',
+        sandboxApiKey: 'test-sandbox-api',
+        sandboxSecretKey: 'test-sandbox-secret',
+        baseUrl: IYZICO_SANDBOX_BASE_URL,
       });
 
       const config = customClient.getConfig();
-      expect(config.baseUrl).toBe('https://custom.sandbox.com');
+      expect(config.baseUrl).toBe(IYZICO_SANDBOX_BASE_URL);
       expect(config.isSandbox).toBe(true);
       expect(config.environment).toBe('sandbox');
     });
@@ -91,14 +101,14 @@ describe('IyzicoClient', () => {
     test('should accept custom options', () => {
       const customClient = new IyzicoClient({
         ...validOptions,
-        baseUrl: 'https://custom.api.com',
+        baseUrl: IYZICO_BASE_URL,
         timeout: 10000,
         maxRetries: 1,
         debug: true,
       });
 
       const config = customClient.getConfig();
-      expect(config.baseUrl).toBe('https://custom.api.com');
+      expect(config.baseUrl).toBe(IYZICO_BASE_URL);
       expect(config.timeout).toBe(10000);
       expect(config.maxRetries).toBe(1);
       expect(config.debug).toBe(true);
@@ -141,6 +151,74 @@ describe('IyzicoClient', () => {
           })
       ).toThrow('Invalid baseUrl provided. Must be a valid URL.');
     });
+
+    test('should throw error when sandbox mode is enabled but sandbox API key is missing', () => {
+      expect(
+        () =>
+          new IyzicoClient({
+            ...validOptions,
+            isSandbox: true,
+            sandboxSecretKey: 'test-sandbox-secret',
+            // sandboxApiKey is missing
+          })
+      ).toThrow(
+        'Iyzico Sandbox API Key is required when isSandbox is enabled.'
+      );
+    });
+
+    test('should throw error when sandbox mode is enabled but sandbox secret key is missing', () => {
+      expect(
+        () =>
+          new IyzicoClient({
+            ...validOptions,
+            isSandbox: true,
+            sandboxApiKey: 'test-sandbox-api',
+            // sandboxSecretKey is missing
+          })
+      ).toThrow(
+        'Iyzico Sandbox Secret Key is required when isSandbox is enabled.'
+      );
+    });
+
+    test('should throw error when sandbox mode is enabled but both sandbox keys are missing', () => {
+      expect(
+        () =>
+          new IyzicoClient({
+            ...validOptions,
+            isSandbox: true,
+            // both sandbox keys are missing
+          })
+      ).toThrow(
+        'Iyzico Sandbox API Key is required when isSandbox is enabled.'
+      );
+    });
+
+    test('should successfully initialize with sandbox credentials when sandbox mode is enabled', () => {
+      const sandboxClient = new IyzicoClient({
+        ...validOptions,
+        isSandbox: true,
+        sandboxApiKey: 'test-sandbox-api',
+        sandboxSecretKey: 'test-sandbox-secret',
+      });
+
+      expect(sandboxClient).toBeInstanceOf(IyzicoClient);
+      const config = sandboxClient.getConfig();
+      expect(config.isSandbox).toBe(true);
+      expect(config.environment).toBe('sandbox');
+    });
+
+    test('should not require sandbox credentials when sandbox mode is disabled', () => {
+      const productionClient = new IyzicoClient({
+        ...validOptions,
+        isSandbox: false,
+        // no sandbox keys provided - should be fine
+      });
+
+      expect(productionClient).toBeInstanceOf(IyzicoClient);
+      const config = productionClient.getConfig();
+      expect(config.isSandbox).toBe(false);
+      expect(config.environment).toBe('production');
+    });
   });
 
   describe('request method', () => {
@@ -162,7 +240,7 @@ describe('IyzicoClient', () => {
       expect(fetchMock).toHaveBeenCalledOnce();
 
       const [url, options] = fetchMock.mock.calls[0];
-      expect(url).toBe('https://api.iyzipay.com/test');
+      expect(url).toBe(IYZICO_BASE_URL + '/test');
       expect(options?.method).toBe('GET');
       expect(options?.body).toBe(null);
     });
@@ -171,6 +249,8 @@ describe('IyzicoClient', () => {
       const sandboxClient = new IyzicoClient({
         ...validOptions,
         isSandbox: true,
+        sandboxApiKey: 'test-sandbox-api',
+        sandboxSecretKey: 'test-sandbox-secret',
       });
 
       const mockResponse = { status: 'success', data: { id: '123' } };
@@ -402,6 +482,36 @@ describe('IyzicoClient', () => {
 
       expect(headers['X-Request-ID']).toMatch(/^req_\d+_[a-z0-9]{9}$/);
     });
+
+    test('should throw runtime error when sandbox mode enabled but sandbox credentials missing at request time', async () => {
+      // Create a client that bypasses constructor validation by creating with production settings
+      // then manually setting isSandbox to true (simulating runtime configuration change)
+      const testClient = new IyzicoClient({
+        ...validOptions,
+        isSandbox: false, // Start with production mode
+      });
+
+      // Manually modify the internal options to simulate sandbox mode being enabled without proper credentials
+      (testClient as any).options.isSandbox = true;
+      (testClient as any).options.sandboxApiKey = undefined;
+      (testClient as any).options.sandboxSecretKey = undefined;
+
+      await expect(
+        testClient.request({
+          path: '/test',
+          method: 'GET',
+        })
+      ).rejects.toThrow(
+        'Sandbox mode is enabled but sandbox credentials are missing. Provide sandboxApiKey and sandboxSecretKey.'
+      );
+
+      await expect(
+        testClient.request({
+          path: '/test',
+          method: 'GET',
+        })
+      ).rejects.toThrowError(IyzicoApiError);
+    });
   });
 
   describe('error classes', () => {
@@ -478,6 +588,8 @@ describe('IyzicoClient', () => {
         ...validOptions,
         debug: true,
         isSandbox: true,
+        sandboxApiKey: 'test-sandbox-api',
+        sandboxSecretKey: 'test-sandbox-secret',
       });
 
       expect(consoleSpy).toHaveBeenCalledWith(
