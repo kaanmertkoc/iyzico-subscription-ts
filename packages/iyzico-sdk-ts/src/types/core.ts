@@ -31,6 +31,8 @@ export enum CurrencyCode {
 export interface IyzicoOptions {
   apiKey: string;
   secretKey: string;
+  sandboxApiKey?: string;
+  sandboxSecretKey?: string;
   baseUrl?: string;
 }
 

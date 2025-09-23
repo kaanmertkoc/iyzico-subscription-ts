@@ -124,6 +124,18 @@ export class IyzicoClient {
       throw new Error('Iyzico Secret Key is required and cannot be empty.');
     }
 
+    if (!options.sandboxApiKey?.trim()) {
+      throw new Error(
+        'Iyzico Sandbox API Key is required and cannot be empty.'
+      );
+    }
+
+    if (!options.sandboxSecretKey?.trim()) {
+      throw new Error(
+        'Iyzico Sandbox Secret Key is required and cannot be empty.'
+      );
+    }
+
     // Determine the appropriate base URL based on environment
     const defaultBaseUrl = options.isSandbox
       ? 'https://sandbox-merchant.iyzipay.com' // Sandbox environment
@@ -136,6 +148,8 @@ export class IyzicoClient {
       maxRetries: 3,
       debug: false,
       isSandbox: options.isSandbox || false,
+      sandboxApiKey: options.sandboxApiKey,
+      sandboxSecretKey: options.sandboxSecretKey,
       ...options,
     };
 
@@ -194,8 +208,12 @@ export class IyzicoClient {
 
     // Generate authentication headers
     const headers = generateAuthHeaders({
-      apiKey: this.options.apiKey,
-      secretKey: this.options.secretKey,
+      apiKey: this.options.isSandbox
+        ? this.options.sandboxApiKey
+        : this.options.apiKey,
+      secretKey: this.options.isSandbox
+        ? this.options.sandboxSecretKey
+        : this.options.secretKey,
       path,
       body: requestBodyString,
     });
@@ -362,6 +380,10 @@ export class IyzicoClient {
       debug: this.options.debug,
       isSandbox: this.options.isSandbox,
       environment: this.options.isSandbox ? 'sandbox' : 'production',
+      apiKey: this.options.isSandbox
+        ? this.options.sandboxApiKey
+        : this.options.apiKey,
+      sandboxApiKey: this.options.sandboxApiKey,
     };
   }
 }

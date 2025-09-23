@@ -1,12 +1,16 @@
 {
-    "name": "hono-app",
-    "private": true,
-    "scripts": {
-      "dev": "bun --watch src/index.ts"
-    },
-    "dependencies": {
-      "hono": "^4.9.8",
-      "@kaanmertkoc/iyzico-ts": "workspace:*"
-    },
-    "devDependencies": { "bun-types": "latest" }
+  "name": "hono-app",
+  "private": true,
+  "scripts": {
+    "dev": "bun --watch src/index.ts"
+  },
+  "dependencies": {
+    "hono": "^4.9.8",
+    "@kaanmertkoc/iyzico-ts": "workspace:*",
+    "zod": "^3.22.4",
+    "@hono/zod-validator": "^0.2.2"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
   }
+}

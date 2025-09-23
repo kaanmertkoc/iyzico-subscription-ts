@@ -3,6 +3,10 @@ import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { cors } from 'hono/cors';
 
+// Import routes
+import healthRoutes from './routes/health';
+import productsRoutes from './routes/products';
+
 const app = new Hono();
 
 app.use('*', logger());
@@ -45,5 +49,18 @@ app.use(
     maxAge: 3600,
   })
 );
+
+// Register routes
+app.route('/api/health', healthRoutes);
+app.route('/api/products', productsRoutes);
+
+// Basic health check for the app itself
+app.get('/api/status', (c) => {
+  return c.json({ 
+    status: 'OK', 
+    timestamp: Date.now(),
+    message: 'Hono app with Iyzico SDK is running' 
+  });
+});
 
 export default app;
