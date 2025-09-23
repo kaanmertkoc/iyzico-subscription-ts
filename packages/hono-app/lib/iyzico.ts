@@ -11,15 +11,24 @@ const sandboxSecretKey = process.env.IYZICO_SANDBOX_SECRET_KEY;
 // Environment mode (defaults to production)
 const isSandbox = process.env.IYZICO_ENVIRONMENT === 'sandbox';
 
-if (!apiKey || !secretKey) {
-  throw new Error('Missing IYZICO_API_KEY or IYZICO_SECRET_KEY in environment');
+if (!apiKey) {
+  throw new Error('Missing IYZICO_API_KEY');
+}
+
+if (!secretKey) {
+  throw new Error('Missing IYZICO_SECRET_KEY');
 }
 
 export const iyzico = new IyzicoClient({
   apiKey,
   secretKey,
-  sandboxApiKey,
-  sandboxSecretKey,
+  ...(sandboxApiKey && { sandboxApiKey }),
+  ...(sandboxSecretKey && { sandboxSecretKey }),
   isSandbox,
   debug: process.env.NODE_ENV === 'development', // Enable debug in development
+});
+
+export const iyzicoMinimal = new IyzicoClient({
+  apiKey,
+  secretKey,
 });

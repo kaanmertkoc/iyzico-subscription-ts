@@ -2,7 +2,10 @@
   "name": "hono-app",
   "private": true,
   "scripts": {
-    "dev": "bun --watch src/index.ts"
+    "dev": "bun --env-file=.env.local --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "preview": "bun dist/index.js"
   },
   "dependencies": {
     "hono": "^4.9.8",
