@@ -396,10 +396,18 @@ export class IyzicoClient {
     body?: object;
     retryCount?: number;
   }): Promise<T> {
-    console.log('[CLIENT] Request method called with config:', requestConfig);
     const { path, method, body, retryCount = 0 } = requestConfig;
     const url = `${this.options.baseUrl}${path}`;
-    console.log('[CLIENT] Request URL constructed:', url);
+
+    if (this.options.debug) {
+      console.log('[IyzicoSDK] Starting request:', {
+        method,
+        path,
+        url,
+        hasBody: !!body,
+        retryAttempt: retryCount,
+      });
+    }
     const requestBodyString = body ? JSON.stringify(body) : '';
     const requestId = `req_${Date.now()}_${Math.random()
       .toString(36)
@@ -456,12 +464,15 @@ export class IyzicoClient {
           ? requestBodyString
           : null;
 
-      console.log('[CLIENT] About to make fetch request:', {
-        url,
-        method,
-        bodyLength: requestBody?.length || 0,
-        headersCount: Object.keys(requestHeaders).length,
-      });
+      if (this.options.debug) {
+        console.log('[IyzicoSDK] Making HTTP request:', {
+          url,
+          method,
+          bodySize: requestBody?.length || 0,
+          timeout: this.options.timeout,
+          requestId,
+        });
+      }
 
       const response = await fetch(url, {
         method,
@@ -470,10 +481,13 @@ export class IyzicoClient {
         signal: controller.signal,
       });
 
-      console.log(
-        '[CLIENT] Fetch completed, response status:',
-        response.status
-      );
+      if (this.options.debug) {
+        console.log('[IyzicoSDK] HTTP response received:', {
+          status: response.status,
+          statusText: response.statusText,
+          requestId,
+        });
+      }
 
       clearTimeout(timeoutId);
 
@@ -492,10 +506,11 @@ export class IyzicoClient {
       }
 
       if (this.options.debug) {
-        console.log(`[IyzicoClient] Response ${response.status}:`, {
+        console.log('[IyzicoSDK] Request completed successfully:', {
           requestId,
           status: response.status,
-          data: responseData,
+          dataKeys: responseData ? Object.keys(responseData) : [],
+          success: responseData?.status === 'success',
         });
       }
 
@@ -504,11 +519,12 @@ export class IyzicoClient {
         // Check if we should retry
         if (this.shouldRetry(response.status, retryCount)) {
           if (this.options.debug) {
-            console.log(
-              `[IyzicoClient] Retrying request (attempt ${retryCount + 1}/${
-                this.options.maxRetries
-              })`
-            );
+            console.log('[IyzicoSDK] Retrying request:', {
+              attempt: retryCount + 1,
+              maxRetries: this.options.maxRetries,
+              status: response.status,
+              requestId
+            });
           }
 
           // Wait before retry (exponential backoff)
@@ -536,6 +552,15 @@ export class IyzicoClient {
 
       return responseData as T;
     } catch (error) {
+      if (this.options.debug) {
+        console.error('[IyzicoSDK] Request failed:', {
+          error: error instanceof Error ? error.message : String(error),
+          errorType: error instanceof Error ? error.name : typeof error,
+          requestId,
+          url
+        });
+      }
+      
       // Handle AbortError (timeout)
       if (error instanceof Error && error.name === 'AbortError') {
         throw new IyzicoNetworkError(

@@ -353,7 +353,7 @@ describe('IyzicoClient', () => {
         string,
         RequestInit | undefined,
       ];
-      expect(url).toBe('https://sandbox-merchant.iyzipay.com/test');
+      expect(url).toBe(`${IYZICO_SANDBOX_BASE_URL}/test`);
       expect(options?.method).toBe('GET');
       expect(options?.body).toBe(null);
     });
@@ -416,7 +416,7 @@ describe('IyzicoClient', () => {
         expect(apiError.statusCode).toBe(400);
         expect(apiError.errorCode).toBe('INVALID_BIN');
         expect(apiError.errorGroup).toBe('VALIDATION_ERROR');
-        expect(apiError.url).toBe('https://api.iyzipay.com/payment/bin/check');
+        expect(apiError.url).toBe(`${IYZICO_BASE_URL}/payment/bin/check`);
         expect(apiError.method).toBe('POST');
         expect(apiError.requestId).toMatch(/^req_\d+_[a-z0-9]{9}$/);
         expect(apiError.responseData).toEqual(mockErrorResponse);
@@ -449,7 +449,7 @@ describe('IyzicoClient', () => {
           statusCode: 400,
           errorCode: 'INVALID_BIN',
           errorGroup: 'VALIDATION_ERROR',
-          url: 'https://api.iyzipay.com/payment/bin/check',
+          url: `${IYZICO_BASE_URL}/payment/bin/check`,
           method: 'POST',
           userFriendlyMessage: 'Invalid card number format',
           isRetryable: false,
@@ -642,7 +642,7 @@ describe('IyzicoClient', () => {
           400,
           { errorCode: 'TEST_ERROR', errorGroup: 'VALIDATION' },
           'req_123',
-          { url: 'https://api.iyzipay.com/test', method: 'POST' }
+          { url: `${IYZICO_BASE_URL}/test`, method: 'POST' }
         );
 
         expect(error.name).toBe('IyzicoApiError');
@@ -651,7 +651,7 @@ describe('IyzicoClient', () => {
         expect(error.requestId).toBe('req_123');
         expect(error.errorCode).toBe('TEST_ERROR');
         expect(error.errorGroup).toBe('VALIDATION');
-        expect(error.url).toBe('https://api.iyzipay.com/test');
+        expect(error.url).toBe(`${IYZICO_BASE_URL}/test`);
         expect(error.method).toBe('POST');
         expect(error.getFormattedMessage()).toBe(
           '[400] Test error | Code: TEST_ERROR | Group: VALIDATION | Request ID: req_123'
@@ -715,7 +715,7 @@ describe('IyzicoClient', () => {
             additionalData: 'test',
           },
           'req_123',
-          { url: 'https://api.iyzipay.com/test', method: 'POST' }
+          { url: `${IYZICO_BASE_URL}/test`, method: 'POST' }
         );
 
         const json = error.toJSON();
@@ -726,7 +726,7 @@ describe('IyzicoClient', () => {
           statusCode: 400,
           errorCode: 'TEST_ERROR',
           errorGroup: 'VALIDATION',
-          url: 'https://api.iyzipay.com/test',
+          url: `${IYZICO_BASE_URL}/test`,
           method: 'POST',
           userFriendlyMessage: expect.any(String),
           isRetryable: false,
@@ -893,7 +893,7 @@ describe('IyzicoClient', () => {
       expect(consoleSpy).toHaveBeenCalledWith(
         '[IyzicoClient] Initialized with options:',
         expect.objectContaining({
-          baseUrl: 'https://sandbox-merchant.iyzipay.com',
+          baseUrl: `${IYZICO_SANDBOX_BASE_URL}`,
           isSandbox: true,
           environment: 'sandbox',
           apiKey: expect.any(String),
