@@ -1,17 +1,18 @@
-import { vi, test, expect, describe, afterEach, beforeEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import {
-  IyzicoClient,
-  IyzicoError,
-  IyzicoApiError,
-  IyzicoNetworkError,
-  IyzicoConfigError,
   IYZICO_BASE_URL,
   IYZICO_SANDBOX_BASE_URL,
+  IyzicoApiError,
+  IyzicoClient,
+  IyzicoConfigError,
+  IyzicoError,
+  IyzicoNetworkError,
 } from '../src/client';
 
 // Mock fetch globally
-globalThis.fetch = vi.fn();
-const fetchMock = globalThis.fetch as any;
+const mockFetch = vi.fn<typeof fetch>();
+globalThis.fetch = mockFetch;
+const fetchMock = mockFetch;
 
 describe('IyzicoClient', () => {
   let client: IyzicoClient;
@@ -202,7 +203,7 @@ describe('IyzicoClient', () => {
       ).toThrowError(IyzicoConfigError);
     });
 
-    test('should throw error when sandbox mode is enabled but sandbox API key is missing', () => {
+    test('should throw IyzicoConfigError when sandbox mode is enabled but sandbox API key is missing', () => {
       expect(
         () =>
           new IyzicoClient({
@@ -214,9 +215,18 @@ describe('IyzicoClient', () => {
       ).toThrow(
         'Iyzico Sandbox API Key is required when isSandbox is enabled.'
       );
+
+      expect(
+        () =>
+          new IyzicoClient({
+            ...validOptions,
+            isSandbox: true,
+            sandboxSecretKey: 'test-sandbox-secret',
+          })
+      ).toThrowError(IyzicoConfigError);
     });
 
-    test('should throw error when sandbox mode is enabled but sandbox secret key is missing', () => {
+    test('should throw IyzicoConfigError when sandbox mode is enabled but sandbox secret key is missing', () => {
       expect(
         () =>
           new IyzicoClient({
@@ -228,9 +238,18 @@ describe('IyzicoClient', () => {
       ).toThrow(
         'Iyzico Sandbox Secret Key is required when isSandbox is enabled.'
       );
+
+      expect(
+        () =>
+          new IyzicoClient({
+            ...validOptions,
+            isSandbox: true,
+            sandboxApiKey: 'test-sandbox-api',
+          })
+      ).toThrowError(IyzicoConfigError);
     });
 
-    test('should throw error when sandbox mode is enabled but both sandbox keys are missing', () => {
+    test('should throw IyzicoConfigError when sandbox mode is enabled but both sandbox keys are missing', () => {
       expect(
         () =>
           new IyzicoClient({
@@ -241,6 +260,14 @@ describe('IyzicoClient', () => {
       ).toThrow(
         'Iyzico Sandbox API Key is required when isSandbox is enabled.'
       );
+
+      expect(
+        () =>
+          new IyzicoClient({
+            ...validOptions,
+            isSandbox: true,
+          })
+      ).toThrowError(IyzicoConfigError);
     });
 
     test('should successfully initialize with sandbox credentials when sandbox mode is enabled', () => {
@@ -289,7 +316,10 @@ describe('IyzicoClient', () => {
       expect(result).toEqual(mockResponse);
       expect(fetchMock).toHaveBeenCalledOnce();
 
-      const [url, options] = fetchMock.mock.calls[0];
+      const [url, options] = fetchMock.mock.calls[0] as [
+        string,
+        RequestInit | undefined,
+      ];
       expect(url).toBe(IYZICO_BASE_URL + '/test');
       expect(options?.method).toBe('GET');
       expect(options?.body).toBe(null);
@@ -319,7 +349,10 @@ describe('IyzicoClient', () => {
       expect(result).toEqual(mockResponse);
       expect(fetchMock).toHaveBeenCalledOnce();
 
-      const [url, options] = fetchMock.mock.calls[0];
+      const [url, options] = fetchMock.mock.calls[0] as [
+        string,
+        RequestInit | undefined,
+      ];
       expect(url).toBe('https://sandbox-merchant.iyzipay.com/test');
       expect(options?.method).toBe('GET');
       expect(options?.body).toBe(null);
@@ -345,16 +378,20 @@ describe('IyzicoClient', () => {
       expect(result).toEqual(mockResponse);
       expect(fetchMock).toHaveBeenCalledOnce();
 
-      const [, options] = fetchMock.mock.calls[0];
+      const [, options] = fetchMock.mock.calls[0] as [
+        string,
+        RequestInit | undefined,
+      ];
       expect(options?.method).toBe('POST');
       expect(options?.body).toBe(JSON.stringify(requestBody));
     });
 
-    test('should throw IyzicoApiError on 4xx response', async () => {
+    test('should throw IyzicoApiError with enhanced context on 4xx response', async () => {
       const mockErrorResponse = {
         status: 'failure',
-        errorMessage: 'Invalid request',
-        errorCode: 'INVALID_REQUEST',
+        errorMessage: 'Invalid BIN number format',
+        errorCode: 'INVALID_BIN',
+        errorGroup: 'VALIDATION_ERROR',
       };
 
       fetchMock.mockResolvedValue(
@@ -364,30 +401,62 @@ describe('IyzicoClient', () => {
         })
       );
 
-      // Test both error message and error type
-      await expect(
-        client.request({
-          path: '/test',
+      try {
+        await client.request({
+          path: '/payment/bin/check',
           method: 'POST',
-          body: { invalid: 'data' },
-        })
-      ).rejects.toThrow('Invalid request');
+          body: { binNumber: '123456' },
+        });
+        throw new Error('Expected error was not thrown');
+      } catch (error) {
+        expect(error).toBeInstanceOf(IyzicoApiError);
 
-      // Reset mock for second assertion
-      fetchMock.mockResolvedValue(
-        new Response(JSON.stringify(mockErrorResponse), {
-          status: 400,
-          headers: { 'content-type': 'application/json' },
-        })
-      );
+        const apiError = error as IyzicoApiError;
+        expect(apiError.message).toBe('Invalid BIN number format');
+        expect(apiError.statusCode).toBe(400);
+        expect(apiError.errorCode).toBe('INVALID_BIN');
+        expect(apiError.errorGroup).toBe('VALIDATION_ERROR');
+        expect(apiError.url).toBe('https://api.iyzipay.com/payment/bin/check');
+        expect(apiError.method).toBe('POST');
+        expect(apiError.requestId).toMatch(/^req_\d+_[a-z0-9]{9}$/);
+        expect(apiError.responseData).toEqual(mockErrorResponse);
 
-      await expect(
-        client.request({
-          path: '/test',
+        // Test enhanced methods
+        expect(apiError.getUserFriendlyMessage()).toBe(
+          'Invalid card number format'
+        );
+        expect(apiError.isRetryable()).toBe(false);
+        expect(apiError.isClientError()).toBe(true);
+        expect(apiError.isServerError()).toBe(false);
+
+        // Test formatted message
+        expect(apiError.getFormattedMessage()).toContain(
+          '[400] Invalid BIN number format'
+        );
+        expect(apiError.getFormattedMessage()).toContain('Code: INVALID_BIN');
+        expect(apiError.getFormattedMessage()).toContain(
+          'Group: VALIDATION_ERROR'
+        );
+        expect(apiError.getFormattedMessage()).toMatch(
+          /Request ID: req_\d+_[a-z0-9]{9}/
+        );
+
+        // Test JSON representation
+        const json = apiError.toJSON();
+        expect(json).toMatchObject({
+          name: 'IyzicoApiError',
+          message: 'Invalid BIN number format',
+          statusCode: 400,
+          errorCode: 'INVALID_BIN',
+          errorGroup: 'VALIDATION_ERROR',
+          url: 'https://api.iyzipay.com/payment/bin/check',
           method: 'POST',
-          body: { invalid: 'data' },
-        })
-      ).rejects.toThrowError(IyzicoApiError);
+          userFriendlyMessage: 'Invalid card number format',
+          isRetryable: false,
+          isClientError: true,
+          isServerError: false,
+        });
+      }
     });
 
     test('should retry on 5xx errors', async () => {
@@ -418,7 +487,7 @@ describe('IyzicoClient', () => {
       expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 
-    test('should handle timeout errors', async () => {
+    test('should handle timeout errors with enhanced context', async () => {
       const shortTimeoutClient = new IyzicoClient({
         ...validOptions,
         timeout: 1000,
@@ -426,7 +495,7 @@ describe('IyzicoClient', () => {
 
       // Mock a slow response that respects AbortController
       fetchMock.mockImplementation(
-        (_url: string, init?: RequestInit) =>
+        (input: string | URL | Request, init?: RequestInit) =>
           new Promise<Response>((resolve, reject) => {
             const timeout = setTimeout(() => {
               resolve(new Response('{"success": true}'));
@@ -444,40 +513,34 @@ describe('IyzicoClient', () => {
           })
       );
 
-      // Test both error message and error type
-      await expect(
-        shortTimeoutClient.request({
+      try {
+        await shortTimeoutClient.request({
           path: '/test',
           method: 'GET',
-        })
-      ).rejects.toThrow('Request timeout after 1000ms');
+        });
+        throw new Error('Expected timeout error was not thrown');
+      } catch (error) {
+        expect(error).toBeInstanceOf(IyzicoNetworkError);
 
-      // Reset mock implementation for second assertion
-      fetchMock.mockImplementation(
-        (_url: string, init?: RequestInit) =>
-          new Promise<Response>((resolve, reject) => {
-            const timeout = setTimeout(() => {
-              resolve(new Response('{"success": true}'));
-            }, 2000);
+        const networkError = error as IyzicoNetworkError;
+        expect(networkError.message).toBe('Request timeout after 1000ms');
+        expect(networkError.isTimeout).toBe(true);
+        expect(networkError.cause).toBeInstanceOf(DOMException);
+        expect(networkError.requestId).toMatch(/^req_\d+_[a-z0-9]{9}$/);
 
-            // Respect AbortController
-            if (init?.signal) {
-              init.signal.addEventListener('abort', () => {
-                clearTimeout(timeout);
-                reject(
-                  new DOMException('The operation was aborted.', 'AbortError')
-                );
-              });
-            }
-          })
-      );
-
-      await expect(
-        shortTimeoutClient.request({
-          path: '/test',
-          method: 'GET',
-        })
-      ).rejects.toThrowError(IyzicoNetworkError);
+        // Test JSON representation
+        const json = networkError.toJSON();
+        expect(json).toMatchObject({
+          name: 'IyzicoNetworkError',
+          message: 'Request timeout after 1000ms',
+          isTimeout: true,
+          cause: {
+            name: expect.any(String), // Could be 'DOMException' or 'AbortError' depending on environment
+            message: 'The operation was aborted.',
+          },
+        });
+        expect(json.requestId).toMatch(/^req_\d+_[a-z0-9]{9}$/);
+      }
     });
 
     test('should handle network errors', async () => {
@@ -527,13 +590,16 @@ describe('IyzicoClient', () => {
         method: 'GET',
       });
 
-      const [, options] = fetchMock.mock.calls[0];
+      const [, options] = fetchMock.mock.calls[0] as [
+        string,
+        RequestInit | undefined,
+      ];
       const headers = options?.headers as Record<string, string>;
 
       expect(headers['X-Request-ID']).toMatch(/^req_\d+_[a-z0-9]{9}$/);
     });
 
-    test('should throw runtime error when sandbox mode enabled but sandbox credentials missing at request time', async () => {
+    test('should throw IyzicoConfigError when sandbox mode enabled but sandbox credentials missing at request time', async () => {
       // Create a client that bypasses constructor validation by creating with production settings
       // then manually setting isSandbox to true (simulating runtime configuration change)
       const testClient = new IyzicoClient({
@@ -542,8 +608,12 @@ describe('IyzicoClient', () => {
       });
 
       // Manually modify the internal options to simulate sandbox mode being enabled without proper credentials
+      // Type assertion needed for testing internal state
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (testClient as any).options.isSandbox = true;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (testClient as any).options.sandboxApiKey = undefined;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (testClient as any).options.sandboxSecretKey = undefined;
 
       await expect(
@@ -560,38 +630,216 @@ describe('IyzicoClient', () => {
           path: '/test',
           method: 'GET',
         })
-      ).rejects.toThrowError(IyzicoApiError);
+      ).rejects.toThrowError(IyzicoConfigError);
     });
   });
 
   describe('error classes', () => {
-    test('IyzicoApiError should format message correctly', () => {
-      const error = new IyzicoApiError(
-        'Test error',
-        400,
-        { errorCode: 'TEST_ERROR' },
-        'req_123'
-      );
+    describe('IyzicoApiError', () => {
+      test('should format message correctly with all details', () => {
+        const error = new IyzicoApiError(
+          'Test error',
+          400,
+          { errorCode: 'TEST_ERROR', errorGroup: 'VALIDATION' },
+          'req_123',
+          { url: 'https://api.iyzipay.com/test', method: 'POST' }
+        );
 
-      expect(error.name).toBe('IyzicoApiError');
-      expect(error.message).toBe('Test error');
-      expect(error.statusCode).toBe(400);
-      expect(error.requestId).toBe('req_123');
-      expect(error.getFormattedMessage()).toBe(
-        '[400] Test error | Request ID: req_123 | Error Code: TEST_ERROR'
-      );
+        expect(error.name).toBe('IyzicoApiError');
+        expect(error.message).toBe('Test error');
+        expect(error.statusCode).toBe(400);
+        expect(error.requestId).toBe('req_123');
+        expect(error.errorCode).toBe('TEST_ERROR');
+        expect(error.errorGroup).toBe('VALIDATION');
+        expect(error.url).toBe('https://api.iyzipay.com/test');
+        expect(error.method).toBe('POST');
+        expect(error.getFormattedMessage()).toBe(
+          '[400] Test error | Code: TEST_ERROR | Group: VALIDATION | Request ID: req_123'
+        );
+      });
+
+      test('should provide user-friendly messages for known error codes', () => {
+        const binError = new IyzicoApiError(
+          'Invalid BIN',
+          400,
+          { errorCode: 'INVALID_BIN' },
+          'req_456'
+        );
+        expect(binError.getUserFriendlyMessage()).toBe(
+          'Invalid card number format'
+        );
+
+        const cardError = new IyzicoApiError(
+          'Invalid card',
+          400,
+          { errorCode: 'INVALID_CARD' },
+          'req_789'
+        );
+        expect(cardError.getUserFriendlyMessage()).toBe(
+          'Invalid card information'
+        );
+
+        const serverError = new IyzicoApiError(
+          'Server error',
+          500,
+          { errorCode: 'UNKNOWN_ERROR' },
+          'req_101'
+        );
+        expect(serverError.getUserFriendlyMessage()).toBe(
+          'Service temporarily unavailable. Please try again later.'
+        );
+      });
+
+      test('should correctly identify error types', () => {
+        const clientError = new IyzicoApiError('Client error', 400, {});
+        expect(clientError.isClientError()).toBe(true);
+        expect(clientError.isServerError()).toBe(false);
+        expect(clientError.isRetryable()).toBe(false);
+
+        const serverError = new IyzicoApiError('Server error', 500, {});
+        expect(serverError.isClientError()).toBe(false);
+        expect(serverError.isServerError()).toBe(true);
+        expect(serverError.isRetryable()).toBe(true);
+
+        const rateLimitError = new IyzicoApiError('Too many requests', 429, {});
+        expect(rateLimitError.isRetryable()).toBe(true);
+      });
+
+      test('should create comprehensive JSON representation', () => {
+        const error = new IyzicoApiError(
+          'Test error',
+          400,
+          {
+            errorCode: 'TEST_ERROR',
+            errorGroup: 'VALIDATION',
+            additionalData: 'test',
+          },
+          'req_123',
+          { url: 'https://api.iyzipay.com/test', method: 'POST' }
+        );
+
+        const json = error.toJSON();
+        expect(json).toMatchObject({
+          name: 'IyzicoApiError',
+          message: 'Test error',
+          requestId: 'req_123',
+          statusCode: 400,
+          errorCode: 'TEST_ERROR',
+          errorGroup: 'VALIDATION',
+          url: 'https://api.iyzipay.com/test',
+          method: 'POST',
+          userFriendlyMessage: expect.any(String),
+          isRetryable: false,
+          isClientError: true,
+          isServerError: false,
+          responseData: {
+            errorCode: 'TEST_ERROR',
+            errorGroup: 'VALIDATION',
+            additionalData: 'test',
+          },
+        });
+      });
     });
 
-    test('IyzicoNetworkError should preserve cause', () => {
-      const originalError = new Error('Original error');
+    describe('IyzicoNetworkError', () => {
+      test('should preserve cause and identify timeout errors', () => {
+        const originalError = new Error('Original error');
+        const networkError = new IyzicoNetworkError(
+          'Network error',
+          originalError,
+          'req_net_123'
+        );
+
+        expect(networkError.name).toBe('IyzicoNetworkError');
+        expect(networkError.message).toBe('Network error');
+        expect(networkError.cause).toBe(originalError);
+        expect(networkError.requestId).toBe('req_net_123');
+        expect(networkError.isTimeout).toBe(false);
+      });
+
+      test('should detect timeout errors', () => {
+        const timeoutError = new IyzicoNetworkError(
+          'Request timeout after 30000ms',
+          new DOMException('The operation was aborted.', 'AbortError'),
+          'req_timeout_123'
+        );
+
+        expect(timeoutError.isTimeout).toBe(true);
+      });
+
+      test('should create JSON representation with cause', () => {
+        const originalError = new TypeError('fetch error');
+        const networkError = new IyzicoNetworkError(
+          'Network error',
+          originalError,
+          'req_net_456'
+        );
+
+        const json = networkError.toJSON();
+        expect(json).toMatchObject({
+          name: 'IyzicoNetworkError',
+          message: 'Network error',
+          requestId: 'req_net_456',
+          isTimeout: false,
+          cause: {
+            name: 'TypeError',
+            message: 'fetch error',
+          },
+        });
+      });
+    });
+
+    describe('IyzicoConfigError', () => {
+      test('should store configuration field information', () => {
+        const configError = new IyzicoConfigError(
+          'Invalid API key format',
+          'apiKey'
+        );
+
+        expect(configError.name).toBe('IyzicoConfigError');
+        expect(configError.message).toBe('Invalid API key format');
+        expect(configError.configField).toBe('apiKey');
+      });
+
+      test('should create JSON representation', () => {
+        const configError = new IyzicoConfigError(
+          'Invalid timeout value',
+          'timeout'
+        );
+
+        const json = configError.toJSON();
+        expect(json).toMatchObject({
+          name: 'IyzicoConfigError',
+          message: 'Invalid timeout value',
+          configField: 'timeout',
+        });
+      });
+    });
+
+    test('should test base error class functionality through concrete implementations', () => {
+      // Test that all error classes inherit from IyzicoError properly
+      const apiError = new IyzicoApiError('API error', 400, {}, 'req_123');
       const networkError = new IyzicoNetworkError(
         'Network error',
-        originalError
+        undefined,
+        'req_456'
       );
+      const configError = new IyzicoConfigError('Config error', 'apiKey');
 
+      // Test inheritance
+      expect(apiError).toBeInstanceOf(IyzicoError);
+      expect(networkError).toBeInstanceOf(IyzicoError);
+      expect(configError).toBeInstanceOf(IyzicoError);
+
+      // Test that all have the base properties
+      expect(apiError.name).toBe('IyzicoApiError');
       expect(networkError.name).toBe('IyzicoNetworkError');
-      expect(networkError.message).toBe('Network error');
-      expect(networkError.cause).toBe(originalError);
+      expect(configError.name).toBe('IyzicoConfigError');
+
+      // Test JSON method inheritance
+      expect(typeof apiError.toJSON).toBe('function');
+      expect(typeof networkError.toJSON).toBe('function');
+      expect(typeof configError.toJSON).toBe('function');
     });
   });
 
