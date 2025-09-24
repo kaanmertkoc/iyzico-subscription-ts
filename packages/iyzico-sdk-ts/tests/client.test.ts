@@ -1,8 +1,10 @@
 import { vi, test, expect, describe, afterEach, beforeEach } from 'vitest';
 import {
   IyzicoClient,
+  IyzicoError,
   IyzicoApiError,
   IyzicoNetworkError,
+  IyzicoConfigError,
   IYZICO_BASE_URL,
   IYZICO_SANDBOX_BASE_URL,
 } from '../src/client';
@@ -39,7 +41,7 @@ describe('IyzicoClient', () => {
       expect(client.health).toBeDefined();
     });
 
-    test('should throw error with empty API key', () => {
+    test('should throw IyzicoConfigError with empty API key', () => {
       expect(
         () =>
           new IyzicoClient({
@@ -47,9 +49,17 @@ describe('IyzicoClient', () => {
             secretKey: 'test-secret',
           })
       ).toThrow('Iyzico API Key is required and cannot be empty.');
+
+      expect(
+        () =>
+          new IyzicoClient({
+            apiKey: '',
+            secretKey: 'test-secret',
+          })
+      ).toThrowError(IyzicoConfigError);
     });
 
-    test('should throw error with empty secret key', () => {
+    test('should throw IyzicoConfigError with empty secret key', () => {
       expect(
         () =>
           new IyzicoClient({
@@ -57,6 +67,14 @@ describe('IyzicoClient', () => {
             secretKey: '',
           })
       ).toThrow('Iyzico Secret Key is required and cannot be empty.');
+
+      expect(
+        () =>
+          new IyzicoClient({
+            apiKey: 'test-api',
+            secretKey: '',
+          })
+      ).toThrowError(IyzicoConfigError);
     });
 
     test('should set default options for production', () => {
@@ -114,7 +132,7 @@ describe('IyzicoClient', () => {
       expect(config.debug).toBe(true);
     });
 
-    test('should validate timeout minimum', () => {
+    test('should validate timeout minimum and throw IyzicoConfigError', () => {
       expect(
         () =>
           new IyzicoClient({
@@ -122,9 +140,17 @@ describe('IyzicoClient', () => {
             timeout: 500,
           })
       ).toThrow('Timeout must be at least 1000ms (1 second).');
+
+      expect(
+        () =>
+          new IyzicoClient({
+            ...validOptions,
+            timeout: 500,
+          })
+      ).toThrowError(IyzicoConfigError);
     });
 
-    test('should validate maxRetries range', () => {
+    test('should validate maxRetries range and throw IyzicoConfigError', () => {
       expect(
         () =>
           new IyzicoClient({
@@ -137,12 +163,28 @@ describe('IyzicoClient', () => {
         () =>
           new IyzicoClient({
             ...validOptions,
+            maxRetries: -1,
+          })
+      ).toThrowError(IyzicoConfigError);
+
+      expect(
+        () =>
+          new IyzicoClient({
+            ...validOptions,
             maxRetries: 11,
           })
       ).toThrow('maxRetries must be between 0 and 10.');
+
+      expect(
+        () =>
+          new IyzicoClient({
+            ...validOptions,
+            maxRetries: 11,
+          })
+      ).toThrowError(IyzicoConfigError);
     });
 
-    test('should validate baseUrl format', () => {
+    test('should validate baseUrl format and throw IyzicoConfigError', () => {
       expect(
         () =>
           new IyzicoClient({
@@ -150,6 +192,14 @@ describe('IyzicoClient', () => {
             baseUrl: 'invalid-url',
           })
       ).toThrow('Invalid baseUrl provided. Must be a valid URL.');
+
+      expect(
+        () =>
+          new IyzicoClient({
+            ...validOptions,
+            baseUrl: 'invalid-url',
+          })
+      ).toThrowError(IyzicoConfigError);
     });
 
     test('should throw error when sandbox mode is enabled but sandbox API key is missing', () => {

@@ -1,26 +1,22 @@
 import { Hono } from 'hono';
 import { iyzico } from '../../lib/iyzico';
 import { validator, Schemas } from '../../lib/validation-utils';
+import { errorHandler, success } from '../../lib/error-handler';
 
 const healthRoutes = new Hono();
 
+// Apply error handling middleware
+healthRoutes.use('*', errorHandler.middleware());
+
 healthRoutes.get('/bin', validator('query', Schemas.Query.bin), async (c) => {
-  try {
-    const { bin } = c.req.valid('query');
+  const { bin } = c.req.valid('query');
 
-    const result = await iyzico.health.checkBin({
-      binNumber: bin,
-      conversationId: `bin-check-${Date.now()}`,
-    });
+  const result = await iyzico.health.checkBin({
+    binNumber: bin,
+    conversationId: `bin-check-${Date.now()}`,
+  });
 
-    return c.json(result);
-  } catch (error) {
-    console.error('BIN check error:', error);
-    return c.json(
-      { error: 'Failed to check BIN number', timestamp: Date.now() },
-      500
-    );
-  }
+  return c.json(success(result));
 });
 
 export default healthRoutes;

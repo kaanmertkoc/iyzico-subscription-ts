@@ -25,21 +25,68 @@ export interface IyzicoClientOptions extends IyzicoOptions {
 }
 
 /**
- * A structured error thrown when the Iyzico API returns a non-2xx response.
+ * Base error class for all Iyzico SDK errors
  */
-export class IyzicoApiError extends Error {
-  constructor(
-    message: string,
-    public readonly statusCode: number,
-    public readonly responseData: any,
-    public readonly requestId?: string
-  ) {
+export abstract class IyzicoError extends Error {
+  public readonly name: string;
+  public readonly requestId?: string;
+
+  constructor(message: string, requestId?: string) {
     super(message);
-    this.name = 'IyzicoApiError';
+    this.name = this.constructor.name;
+    (this as any).requestId = requestId;
 
     // Capture stack trace if available
     if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, IyzicoApiError);
+      Error.captureStackTrace(this, this.constructor);
+    }
+  }
+
+  /**
+   * Returns a JSON representation of the error for debugging
+   */
+  public toJSON(): Record<string, any> {
+    return {
+      name: this.name,
+      message: this.message,
+      requestId: this.requestId,
+      stack: this.stack
+    };
+  }
+}
+
+/**
+ * A structured error thrown when the Iyzico API returns a non-2xx response.
+ * Contains all the context needed for debugging API issues.
+ */
+export class IyzicoApiError extends IyzicoError {
+  public readonly statusCode: number;
+  public readonly responseData: any;
+  public readonly errorCode?: string;
+  public readonly errorGroup?: string;
+  public readonly url?: string;
+  public readonly method?: string;
+
+  constructor(
+    message: string,
+    statusCode: number,
+    responseData: any,
+    requestId?: string,
+    options?: {
+      url?: string;
+      method?: string;
+    }
+  ) {
+    super(message, requestId);
+    this.statusCode = statusCode;
+    this.responseData = responseData;
+    (this as any).url = options?.url;
+    (this as any).method = options?.method;
+
+    // Extract error details from response data
+    if (responseData) {
+      (this as any).errorCode = responseData.errorCode || responseData.code;
+      (this as any).errorGroup = responseData.errorGroup || responseData.type;
     }
   }
 
@@ -49,28 +96,149 @@ export class IyzicoApiError extends Error {
   public getFormattedMessage(): string {
     const parts = [`[${this.statusCode}] ${this.message}`];
 
+    if (this.errorCode) {
+      parts.push(`Code: ${this.errorCode}`);
+    }
+
+    if (this.errorGroup) {
+      parts.push(`Group: ${this.errorGroup}`);
+    }
+
     if (this.requestId) {
       parts.push(`Request ID: ${this.requestId}`);
     }
 
-    if (this.responseData?.errorCode) {
-      parts.push(`Error Code: ${this.responseData.errorCode}`);
+    return parts.join(' | ');
+  }
+
+  /**
+   * Returns details that can be safely shown to end users
+   */
+  public getUserFriendlyMessage(): string {
+    // Map common error codes to user-friendly messages
+    const userFriendlyMessages: Record<string, string> = {
+      INVALID_BIN: 'Invalid card number format',
+      INVALID_CARD: 'Invalid card information',
+      INSUFFICIENT_FUNDS: 'Insufficient funds',
+      EXPIRED_CARD: 'Card has expired',
+      INVALID_CVV: 'Invalid security code',
+      CARD_NOT_ENROLLED: 'Card not enrolled for online payments',
+      AUTHENTICATION_FAILED: 'Authentication failed',
+      LIMIT_EXCEEDED: 'Transaction limit exceeded',
+      FRAUD_SUSPECTED: 'Transaction declined for security reasons',
+      INVALID_MERCHANT: 'Invalid merchant configuration',
+      INVALID_TRANSACTION: 'Invalid transaction',
+      DUPLICATE_TRANSACTION: 'Duplicate transaction detected',
+    };
+
+    if (this.errorCode && userFriendlyMessages[this.errorCode]) {
+      return userFriendlyMessages[this.errorCode];
     }
 
-    return parts.join(' | ');
+    // Fallback to generic message based on status code
+    if (this.statusCode >= 500) {
+      return 'Service temporarily unavailable. Please try again later.';
+    } else if (this.statusCode === 429) {
+      return 'Too many requests. Please try again in a few moments.';
+    } else if (this.statusCode >= 400) {
+      return this.message || 'Request could not be processed';
+    }
+
+    return 'An unexpected error occurred';
+  }
+
+  /**
+   * Check if the error is retryable
+   */
+  public isRetryable(): boolean {
+    // Retry server errors and rate limits
+    return this.statusCode >= 500 || this.statusCode === 429;
+  }
+
+  /**
+   * Check if the error is a client error (4xx)
+   */
+  public isClientError(): boolean {
+    return this.statusCode >= 400 && this.statusCode < 500;
+  }
+
+  /**
+   * Check if the error is a server error (5xx)
+   */
+  public isServerError(): boolean {
+    return this.statusCode >= 500;
+  }
+
+  /**
+   * Returns a JSON representation of the error with all details
+   */
+  public toJSON(): Record<string, any> {
+    return {
+      ...super.toJSON(),
+      statusCode: this.statusCode,
+      errorCode: this.errorCode,
+      errorGroup: this.errorGroup,
+      responseData: this.responseData,
+      url: this.url,
+      method: this.method,
+      userFriendlyMessage: this.getUserFriendlyMessage(),
+      isRetryable: this.isRetryable(),
+      isClientError: this.isClientError(),
+      isServerError: this.isServerError(),
+    };
   }
 }
 
 /**
  * Network or timeout related errors
  */
-export class IyzicoNetworkError extends Error {
-  constructor(
-    message: string,
-    public readonly cause?: Error
-  ) {
+export class IyzicoNetworkError extends IyzicoError {
+  public readonly cause?: Error;
+  public readonly isTimeout: boolean;
+
+  constructor(message: string, cause?: Error, requestId?: string) {
+    super(message, requestId);
+    (this as any).cause = cause;
+    this.isTimeout =
+      message.toLowerCase().includes('timeout') || cause?.name === 'AbortError';
+  }
+
+  /**
+   * Returns a JSON representation of the network error
+   */
+  public toJSON(): Record<string, any> {
+    return {
+      ...super.toJSON(),
+      isTimeout: this.isTimeout,
+      cause: this.cause
+        ? {
+            name: this.cause.name,
+            message: this.cause.message,
+          }
+        : undefined,
+    };
+  }
+}
+
+/**
+ * Configuration and validation errors
+ */
+export class IyzicoConfigError extends IyzicoError {
+  public readonly configField?: string;
+
+  constructor(message: string, configField?: string) {
     super(message);
-    this.name = 'IyzicoNetworkError';
+    (this as any).configField = configField;
+  }
+
+  /**
+   * Returns a JSON representation of the config error
+   */
+  public toJSON(): Record<string, any> {
+    return {
+      ...super.toJSON(),
+      configField: this.configField,
+    };
   }
 }
 
@@ -128,24 +296,32 @@ export class IyzicoClient {
   constructor(options: IyzicoClientOptions) {
     // Validate required options
     if (!options.apiKey?.trim()) {
-      throw new Error('Iyzico API Key is required and cannot be empty.');
+      throw new IyzicoConfigError(
+        'Iyzico API Key is required and cannot be empty.',
+        'apiKey'
+      );
     }
 
     if (!options.secretKey?.trim()) {
-      throw new Error('Iyzico Secret Key is required and cannot be empty.');
+      throw new IyzicoConfigError(
+        'Iyzico Secret Key is required and cannot be empty.',
+        'secretKey'
+      );
     }
 
     // Validate sandbox keys only if sandbox mode is enabled
     if (options.isSandbox) {
       if (!options.sandboxApiKey?.trim()) {
-        throw new Error(
-          'Iyzico Sandbox API Key is required when isSandbox is enabled.'
+        throw new IyzicoConfigError(
+          'Iyzico Sandbox API Key is required when isSandbox is enabled.',
+          'sandboxApiKey'
         );
       }
 
       if (!options.sandboxSecretKey?.trim()) {
-        throw new Error(
-          'Iyzico Sandbox Secret Key is required when isSandbox is enabled.'
+        throw new IyzicoConfigError(
+          'Iyzico Sandbox Secret Key is required when isSandbox is enabled.',
+          'sandboxSecretKey'
         );
       }
     }
@@ -169,16 +345,25 @@ export class IyzicoClient {
     try {
       new URL(this.options.baseUrl);
     } catch {
-      throw new Error('Invalid baseUrl provided. Must be a valid URL.');
+      throw new IyzicoConfigError(
+        'Invalid baseUrl provided. Must be a valid URL.',
+        'baseUrl'
+      );
     }
 
     // Validate numeric options
     if (this.options.timeout < 1000) {
-      throw new Error('Timeout must be at least 1000ms (1 second).');
+      throw new IyzicoConfigError(
+        'Timeout must be at least 1000ms (1 second).',
+        'timeout'
+      );
     }
 
     if (this.options.maxRetries < 0 || this.options.maxRetries > 10) {
-      throw new Error('maxRetries must be between 0 and 10.');
+      throw new IyzicoConfigError(
+        'maxRetries must be between 0 and 10.',
+        'maxRetries'
+      );
     }
 
     // Log initialization if debug is enabled
@@ -223,11 +408,9 @@ export class IyzicoClient {
       this.options.isSandbox &&
       (!this.options.sandboxApiKey || !this.options.sandboxSecretKey)
     ) {
-      throw new IyzicoApiError(
+      throw new IyzicoConfigError(
         'Sandbox mode is enabled but sandbox credentials are missing. Provide sandboxApiKey and sandboxSecretKey.',
-        400,
-        { error: 'MISSING_SANDBOX_CREDENTIALS' },
-        requestId
+        'sandboxCredentials'
       );
     }
 
@@ -329,7 +512,11 @@ export class IyzicoClient {
             `HTTP ${response.status}`,
           response.status,
           responseData,
-          requestId
+          requestId,
+          {
+            url,
+            method,
+          }
         );
       }
 
@@ -339,7 +526,8 @@ export class IyzicoClient {
       if (error instanceof Error && error.name === 'AbortError') {
         throw new IyzicoNetworkError(
           `Request timeout after ${this.options.timeout}ms`,
-          error
+          error,
+          requestId
         );
       }
 
@@ -347,15 +535,13 @@ export class IyzicoClient {
       if (error instanceof TypeError && error.message.includes('fetch')) {
         throw new IyzicoNetworkError(
           'Network error: Unable to connect to Iyzico API',
-          error
+          error,
+          requestId
         );
       }
 
-      // Re-throw IyzicoApiError and IyzicoNetworkError as-is
-      if (
-        error instanceof IyzicoApiError ||
-        error instanceof IyzicoNetworkError
-      ) {
+      // Re-throw IyzicoError subclasses as-is
+      if (error instanceof IyzicoError) {
         throw error;
       }
 
@@ -364,7 +550,8 @@ export class IyzicoClient {
         `Unexpected error: ${
           error instanceof Error ? error.message : String(error)
         }`,
-        error instanceof Error ? error : undefined
+        error instanceof Error ? error : undefined,
+        requestId
       );
     }
   }

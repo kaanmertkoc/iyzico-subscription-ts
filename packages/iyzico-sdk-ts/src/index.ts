@@ -3,8 +3,10 @@
 // Export the main client and error classes
 export {
   IyzicoClient,
+  IyzicoError,
   IyzicoApiError,
   IyzicoNetworkError,
+  IyzicoConfigError,
   type IyzicoClientOptions,
 } from './client';
 
