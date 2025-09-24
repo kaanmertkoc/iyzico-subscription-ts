@@ -11,6 +11,14 @@ const sandboxSecretKey = process.env.IYZICO_SANDBOX_SECRET_KEY;
 // Environment mode (defaults to production)
 const isSandbox = process.env.IYZICO_ENVIRONMENT === 'sandbox';
 
+console.log('[IYZICO_INIT] Environment check:', {
+  hasApiKey: !!apiKey,
+  hasSecretKey: !!secretKey,
+  isSandbox,
+  hasSandboxApiKey: !!sandboxApiKey,
+  hasSandboxSecretKey: !!sandboxSecretKey,
+});
+
 if (!apiKey) {
   throw new Error('Missing IYZICO_API_KEY');
 }

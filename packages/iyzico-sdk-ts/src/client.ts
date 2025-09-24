@@ -8,7 +8,7 @@ import { SubscriptionsService } from './services/subscriptions';
 import { HealthService } from './services/health';
 
 export const IYZICO_BASE_URL = 'https://api.iyzipay.com';
-export const IYZICO_SANDBOX_BASE_URL = 'https://sandbox-merchant.iyzipay.com';
+export const IYZICO_SANDBOX_BASE_URL = 'https://sandbox-api.iyzipay.com';
 
 /**
  * Configuration options for the Iyzico client
@@ -50,7 +50,7 @@ export abstract class IyzicoError extends Error {
       name: this.name,
       message: this.message,
       requestId: this.requestId,
-      stack: this.stack
+      stack: this.stack,
     };
   }
 }
@@ -396,8 +396,10 @@ export class IyzicoClient {
     body?: object;
     retryCount?: number;
   }): Promise<T> {
+    console.log('[CLIENT] Request method called with config:', requestConfig);
     const { path, method, body, retryCount = 0 } = requestConfig;
     const url = `${this.options.baseUrl}${path}`;
+    console.log('[CLIENT] Request URL constructed:', url);
     const requestBodyString = body ? JSON.stringify(body) : '';
     const requestId = `req_${Date.now()}_${Math.random()
       .toString(36)
@@ -454,12 +456,24 @@ export class IyzicoClient {
           ? requestBodyString
           : null;
 
+      console.log('[CLIENT] About to make fetch request:', {
+        url,
+        method,
+        bodyLength: requestBody?.length || 0,
+        headersCount: Object.keys(requestHeaders).length,
+      });
+
       const response = await fetch(url, {
         method,
         headers: requestHeaders,
         body: requestBody,
         signal: controller.signal,
       });
+
+      console.log(
+        '[CLIENT] Fetch completed, response status:',
+        response.status
+      );
 
       clearTimeout(timeoutId);
 

@@ -53,8 +53,9 @@ export const Schemas = {
   BinCheck: z.object({
     binNumber: z
       .string()
-      .length(6)
-      .regex(/^\d{6}$/, 'Must be 6 digits'),
+      .min(6, 'BIN must be at least 6 digits')
+      .max(8, 'BIN must be at most 8 digits')
+      .regex(/^\d{6,8}$/, 'Must be 6-8 digits'),
     locale: z.string().optional(),
     conversationId: z.string().optional(),
   }),
@@ -92,8 +93,9 @@ export const Schemas = {
     bin: z.object({
       bin: z
         .string()
-        .length(6)
-        .regex(/^\d{6}$/),
+        .min(6, 'BIN must be at least 6 digits')
+        .max(8, 'BIN must be at most 8 digits')
+        .regex(/^\d{6,8}$/, 'Must be 6-8 digits'),
     }),
   },
 };
