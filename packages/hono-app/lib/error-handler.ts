@@ -7,6 +7,25 @@ import {
 } from '@kaanmertkoc/iyzico-ts';
 
 /**
+ * User-friendly error messages for common Iyzico error codes
+ * Centralized here for better maintainability
+ */
+const USER_FRIENDLY_MESSAGES: Record<string, string> = {
+  INVALID_BIN: 'Invalid card number format',
+  INVALID_CARD: 'Invalid card information',
+  INSUFFICIENT_FUNDS: 'Insufficient funds',
+  EXPIRED_CARD: 'Card has expired',
+  INVALID_CVV: 'Invalid security code',
+  CARD_NOT_ENROLLED: 'Card not enrolled for online payments',
+  AUTHENTICATION_FAILED: 'Authentication failed',
+  LIMIT_EXCEEDED: 'Transaction limit exceeded',
+  FRAUD_SUSPECTED: 'Transaction declined for security reasons',
+  INVALID_MERCHANT: 'Invalid merchant configuration',
+  INVALID_TRANSACTION: 'Invalid transaction',
+  DUPLICATE_TRANSACTION: 'Duplicate transaction detected',
+};
+
+/**
  * Standard error response format
  */
 export interface ErrorResponse {
@@ -53,6 +72,27 @@ export interface SuccessResponse<T = unknown> {
 export type ApiResponse<T = unknown> = SuccessResponse<T> | ErrorResponse;
 
 /**
+ * Helper function to get user-friendly error message
+ */
+function getUserFriendlyMessage(error: IyzicoApiError): string {
+  // Check for specific error codes first
+  if (error.errorCode && USER_FRIENDLY_MESSAGES[error.errorCode]) {
+    return USER_FRIENDLY_MESSAGES[error.errorCode];
+  }
+
+  // Fallback to generic message based on status code
+  if (error.statusCode >= 500) {
+    return 'Service temporarily unavailable. Please try again later.';
+  } else if (error.statusCode === 429) {
+    return 'Too many requests. Please try again in a few moments.';
+  } else if (error.statusCode >= 400) {
+    return error.message || 'Request could not be processed';
+  }
+
+  return 'An unexpected error occurred';
+}
+
+/**
  * Enhanced error handler that properly extracts and formats all error information
  * from Iyzico SDK errors, following best practices from Stripe, Shopify, etc.
  */
@@ -80,7 +120,7 @@ export class IyzicoErrorHandler {
           error: {
             type: 'API_ERROR',
             message: error.message,
-            userMessage: error.getUserFriendlyMessage(),
+            userMessage: getUserFriendlyMessage(error),
             ...(error.errorCode && { code: error.errorCode }),
             ...(error.errorGroup && { group: error.errorGroup }),
             ...(error.requestId && { requestId: error.requestId }),

@@ -422,9 +422,6 @@ describe('IyzicoClient', () => {
         expect(apiError.responseData).toEqual(mockErrorResponse);
 
         // Test enhanced methods
-        expect(apiError.getUserFriendlyMessage()).toBe(
-          'Invalid card number format'
-        );
         expect(apiError.isRetryable()).toBe(false);
         expect(apiError.isClientError()).toBe(true);
         expect(apiError.isServerError()).toBe(false);
@@ -451,7 +448,6 @@ describe('IyzicoClient', () => {
           errorGroup: 'VALIDATION_ERROR',
           url: `${IYZICO_BASE_URL}/payment/bin/check`,
           method: 'POST',
-          userFriendlyMessage: 'Invalid card number format',
           isRetryable: false,
           isClientError: true,
           isServerError: false,
@@ -658,37 +654,6 @@ describe('IyzicoClient', () => {
         );
       });
 
-      test('should provide user-friendly messages for known error codes', () => {
-        const binError = new IyzicoApiError(
-          'Invalid BIN',
-          400,
-          { errorCode: 'INVALID_BIN' },
-          'req_456'
-        );
-        expect(binError.getUserFriendlyMessage()).toBe(
-          'Invalid card number format'
-        );
-
-        const cardError = new IyzicoApiError(
-          'Invalid card',
-          400,
-          { errorCode: 'INVALID_CARD' },
-          'req_789'
-        );
-        expect(cardError.getUserFriendlyMessage()).toBe(
-          'Invalid card information'
-        );
-
-        const serverError = new IyzicoApiError(
-          'Server error',
-          500,
-          { errorCode: 'UNKNOWN_ERROR' },
-          'req_101'
-        );
-        expect(serverError.getUserFriendlyMessage()).toBe(
-          'Service temporarily unavailable. Please try again later.'
-        );
-      });
 
       test('should correctly identify error types', () => {
         const clientError = new IyzicoApiError('Client error', 400, {});
@@ -728,7 +693,6 @@ describe('IyzicoClient', () => {
           errorGroup: 'VALIDATION',
           url: `${IYZICO_BASE_URL}/test`,
           method: 'POST',
-          userFriendlyMessage: expect.any(String),
           isRetryable: false,
           isClientError: true,
           isServerError: false,
@@ -865,14 +829,23 @@ describe('IyzicoClient', () => {
         body: { test: 'data' },
       });
 
+      // Should have multiple debug logs
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[IyzicoClient] POST'),
+        '[IyzicoSDK] Starting request:',
         expect.objectContaining({
+          method: 'POST',
+          path: '/test',
+          hasBody: true,
+          retryAttempt: 0,
+        })
+      );
+      
+      expect(consoleSpy).toHaveBeenCalledWith(
+        '[IyzicoSDK] Making HTTP request:',
+        expect.objectContaining({
+          method: 'POST',
+          bodySize: expect.any(Number),
           requestId: expect.any(String),
-          headers: expect.objectContaining({
-            Authorization: '[REDACTED]',
-          }),
-          body: { test: 'data' },
         })
       );
 

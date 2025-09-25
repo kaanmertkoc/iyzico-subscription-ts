@@ -7,6 +7,20 @@ import { CheckoutService } from './services/checkout';
 import { SubscriptionsService } from './services/subscriptions';
 import { HealthService } from './services/health';
 
+/**
+ * API error response structure from Iyzico
+ */
+interface IyzicoApiErrorResponse {
+  status?: string;
+  errorMessage?: string;
+  message?: string;
+  errorCode?: string;
+  errorGroup?: string;
+  code?: string;
+  type?: string;
+  [key: string]: unknown;
+}
+
 export const IYZICO_BASE_URL = 'https://api.iyzipay.com';
 export const IYZICO_SANDBOX_BASE_URL = 'https://sandbox-api.iyzipay.com';
 
@@ -34,7 +48,12 @@ export abstract class IyzicoError extends Error {
   constructor(message: string, requestId?: string) {
     super(message);
     this.name = this.constructor.name;
-    (this as any).requestId = requestId;
+    // Use object.defineProperty to properly set readonly property
+    Object.defineProperty(this, 'requestId', {
+      value: requestId,
+      writable: false,
+      enumerable: true,
+    });
 
     // Capture stack trace if available
     if (Error.captureStackTrace) {
@@ -45,7 +64,7 @@ export abstract class IyzicoError extends Error {
   /**
    * Returns a JSON representation of the error for debugging
    */
-  public toJSON(): Record<string, any> {
+  public toJSON(): Record<string, unknown> {
     return {
       name: this.name,
       message: this.message,
@@ -61,7 +80,7 @@ export abstract class IyzicoError extends Error {
  */
 export class IyzicoApiError extends IyzicoError {
   public readonly statusCode: number;
-  public readonly responseData: any;
+  public readonly responseData: IyzicoApiErrorResponse;
   public readonly errorCode?: string;
   public readonly errorGroup?: string;
   public readonly url?: string;
@@ -70,7 +89,7 @@ export class IyzicoApiError extends IyzicoError {
   constructor(
     message: string,
     statusCode: number,
-    responseData: any,
+    responseData: IyzicoApiErrorResponse,
     requestId?: string,
     options?: {
       url?: string;
@@ -80,13 +99,33 @@ export class IyzicoApiError extends IyzicoError {
     super(message, requestId);
     this.statusCode = statusCode;
     this.responseData = responseData;
-    (this as any).url = options?.url;
-    (this as any).method = options?.method;
+    
+    // Use Object.defineProperty for readonly properties
+    Object.defineProperty(this, 'url', {
+      value: options?.url,
+      writable: false,
+      enumerable: true,
+    });
+    
+    Object.defineProperty(this, 'method', {
+      value: options?.method,
+      writable: false,
+      enumerable: true,
+    });
 
     // Extract error details from response data
     if (responseData) {
-      (this as any).errorCode = responseData.errorCode || responseData.code;
-      (this as any).errorGroup = responseData.errorGroup || responseData.type;
+      Object.defineProperty(this, 'errorCode', {
+        value: responseData.errorCode || responseData.code,
+        writable: false,
+        enumerable: true,
+      });
+      
+      Object.defineProperty(this, 'errorGroup', {
+        value: responseData.errorGroup || responseData.type,
+        writable: false,
+        enumerable: true,
+      });
     }
   }
 
@@ -111,41 +150,6 @@ export class IyzicoApiError extends IyzicoError {
     return parts.join(' | ');
   }
 
-  /**
-   * Returns details that can be safely shown to end users
-   */
-  public getUserFriendlyMessage(): string {
-    // Map common error codes to user-friendly messages
-    const userFriendlyMessages: Record<string, string> = {
-      INVALID_BIN: 'Invalid card number format',
-      INVALID_CARD: 'Invalid card information',
-      INSUFFICIENT_FUNDS: 'Insufficient funds',
-      EXPIRED_CARD: 'Card has expired',
-      INVALID_CVV: 'Invalid security code',
-      CARD_NOT_ENROLLED: 'Card not enrolled for online payments',
-      AUTHENTICATION_FAILED: 'Authentication failed',
-      LIMIT_EXCEEDED: 'Transaction limit exceeded',
-      FRAUD_SUSPECTED: 'Transaction declined for security reasons',
-      INVALID_MERCHANT: 'Invalid merchant configuration',
-      INVALID_TRANSACTION: 'Invalid transaction',
-      DUPLICATE_TRANSACTION: 'Duplicate transaction detected',
-    };
-
-    if (this.errorCode && userFriendlyMessages[this.errorCode]) {
-      return userFriendlyMessages[this.errorCode];
-    }
-
-    // Fallback to generic message based on status code
-    if (this.statusCode >= 500) {
-      return 'Service temporarily unavailable. Please try again later.';
-    } else if (this.statusCode === 429) {
-      return 'Too many requests. Please try again in a few moments.';
-    } else if (this.statusCode >= 400) {
-      return this.message || 'Request could not be processed';
-    }
-
-    return 'An unexpected error occurred';
-  }
 
   /**
    * Check if the error is retryable
@@ -172,7 +176,7 @@ export class IyzicoApiError extends IyzicoError {
   /**
    * Returns a JSON representation of the error with all details
    */
-  public toJSON(): Record<string, any> {
+  public toJSON(): Record<string, unknown> {
     return {
       ...super.toJSON(),
       statusCode: this.statusCode,
@@ -181,7 +185,6 @@ export class IyzicoApiError extends IyzicoError {
       responseData: this.responseData,
       url: this.url,
       method: this.method,
-      userFriendlyMessage: this.getUserFriendlyMessage(),
       isRetryable: this.isRetryable(),
       isClientError: this.isClientError(),
       isServerError: this.isServerError(),
@@ -198,7 +201,13 @@ export class IyzicoNetworkError extends IyzicoError {
 
   constructor(message: string, cause?: Error, requestId?: string) {
     super(message, requestId);
-    (this as any).cause = cause;
+    
+    Object.defineProperty(this, 'cause', {
+      value: cause,
+      writable: false,
+      enumerable: true,
+    });
+    
     this.isTimeout =
       message.toLowerCase().includes('timeout') || cause?.name === 'AbortError';
   }
@@ -206,7 +215,7 @@ export class IyzicoNetworkError extends IyzicoError {
   /**
    * Returns a JSON representation of the network error
    */
-  public toJSON(): Record<string, any> {
+  public toJSON(): Record<string, unknown> {
     return {
       ...super.toJSON(),
       isTimeout: this.isTimeout,
@@ -228,13 +237,18 @@ export class IyzicoConfigError extends IyzicoError {
 
   constructor(message: string, configField?: string) {
     super(message);
-    (this as any).configField = configField;
+    
+    Object.defineProperty(this, 'configField', {
+      value: configField,
+      writable: false,
+      enumerable: true,
+    });
   }
 
   /**
    * Returns a JSON representation of the config error
    */
-  public toJSON(): Record<string, any> {
+  public toJSON(): Record<string, unknown> {
     return {
       ...super.toJSON(),
       configField: this.configField,
@@ -442,13 +456,6 @@ export class IyzicoClient {
       'X-Request-ID': requestId,
     };
 
-    if (this.options.debug) {
-      console.log(`[IyzicoClient] ${method} ${url}`, {
-        requestId,
-        headers: { ...requestHeaders, Authorization: '[REDACTED]' },
-        body: body || null,
-      });
-    }
 
     try {
       // Create AbortController for timeout
@@ -492,25 +499,26 @@ export class IyzicoClient {
       clearTimeout(timeoutId);
 
       // Parse response
-      let responseData: any;
+      let responseData: unknown;
       const contentType = response.headers.get('content-type');
 
       if (contentType?.includes('application/json')) {
-        responseData = await response.json();
+        responseData = await response.json() as unknown;
       } else {
         const textData = await response.text();
         if (this.options.debug) {
-          console.warn(`[IyzicoClient] Non-JSON response received:`, textData);
+          console.warn('[IyzicoSDK] Non-JSON response received:', textData);
         }
         responseData = { rawResponse: textData };
       }
 
       if (this.options.debug) {
+        const debugData = responseData && typeof responseData === 'object' ? responseData as Record<string, unknown> : {};
         console.log('[IyzicoSDK] Request completed successfully:', {
           requestId,
           status: response.status,
-          dataKeys: responseData ? Object.keys(responseData) : [],
-          success: responseData?.status === 'success',
+          dataKeys: responseData && typeof responseData === 'object' ? Object.keys(debugData) : [],
+          success: debugData?.status === 'success',
         });
       }
 
@@ -536,12 +544,16 @@ export class IyzicoClient {
           });
         }
 
+        const errorData = responseData && typeof responseData === 'object' 
+          ? responseData as IyzicoApiErrorResponse 
+          : {};
+          
         throw new IyzicoApiError(
-          responseData?.errorMessage ||
-            responseData?.message ||
+          errorData?.errorMessage ||
+            errorData?.message ||
             `HTTP ${response.status}`,
           response.status,
-          responseData,
+          errorData,
           requestId,
           {
             url,
