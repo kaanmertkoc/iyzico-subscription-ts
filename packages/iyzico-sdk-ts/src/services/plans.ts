@@ -26,7 +26,6 @@ export class PlansService {
     params: Omit<CreatePaymentPlanRequest, 'productReferenceCode'>
   ): Promise<PaymentPlanResponse> {
     const requestBody: CreatePaymentPlanRequest = {
-      locale: 'tr',
       conversationId: `plan-create-${Date.now()}`,
       productReferenceCode,
       ...params,
@@ -50,7 +49,6 @@ export class PlansService {
     params: Omit<UpdatePaymentPlanRequest, 'pricingPlanReferenceCode'>
   ): Promise<UpdatePaymentPlanResponse> {
     const requestBody: UpdatePaymentPlanRequest = {
-      locale: 'tr',
       conversationId: `plan-update-${Date.now()}`,
       pricingPlanReferenceCode,
       ...params,

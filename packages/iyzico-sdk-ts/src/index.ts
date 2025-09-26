@@ -1,5 +1,3 @@
-// packages/iyzico-sdk-ts/src/index.ts
-
 // Export the main client and error classes
 export {
   IyzicoClient,

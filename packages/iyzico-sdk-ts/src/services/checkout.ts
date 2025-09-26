@@ -17,13 +17,17 @@ export class CheckoutService {
    * @param params - Checkout initialization parameters
    * @returns Promise resolving to the checkout form data
    */
-  async initialize(params: InitializeCheckoutRequest): Promise<CheckoutFormResponse> {
+  async initialize(
+    params: InitializeCheckoutRequest
+  ): Promise<CheckoutFormResponse> {
     // Transform the customer data to match Iyzico's expected format
     const customer = {
       name: params.name,
       surname: params.surname,
       email: params.email,
-      gsmNumber: params.gsmNumber.startsWith('+90') ? params.gsmNumber : `+90${params.gsmNumber}`,
+      gsmNumber: params.gsmNumber.startsWith('+90')
+        ? params.gsmNumber
+        : `+90${params.gsmNumber}`,
       identityNumber: params.identityNumber,
       billingAddress: params.billingAddress,
       shippingAddress: params.shippingAddress,
@@ -37,7 +41,7 @@ export class CheckoutService {
       callbackUrl: params.callbackUrl,
       customer,
     };
-    
+
     return this.client.request<CheckoutFormResponse>({
       path: '/v2/subscription/checkoutform/initialize',
       method: 'POST',
@@ -53,9 +57,8 @@ export class CheckoutService {
   async retrieve(token: string): Promise<BaseResponse<CheckoutFormData>> {
     return this.client.request<BaseResponse<CheckoutFormData>>({
       path: `/v2/subscription/checkoutform/${token}`,
-      method: 'POST', // Note: Iyzico uses POST for retrieve operations
+      method: 'POST',
       body: {
-        locale: 'tr',
         conversationId: `checkout-retrieve-${Date.now()}`,
         token,
       },

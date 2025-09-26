@@ -24,10 +24,9 @@ export class ProductsService {
     return this.client.request<CreateProductResponse>({
       path: '/v2/subscription/products',
       method: 'POST',
-      body: { 
-        locale: 'tr', 
+      body: {
         conversationId: `product-create-${Date.now()}`,
-        ...params 
+        ...params,
       },
     });
   }
@@ -45,11 +44,10 @@ export class ProductsService {
     return this.client.request<UpdateProductResponse>({
       path: `/v2/subscription/products/${referenceCode}`,
       method: 'POST',
-      body: { 
-        locale: 'tr',
+      body: {
         conversationId: `product-update-${Date.now()}`,
-        productReferenceCode: referenceCode, 
-        ...params 
+        productReferenceCode: referenceCode,
+        ...params,
       },
     });
   }
