@@ -9,7 +9,7 @@ export class HealthService {
     return this.client.request({
       path: '/payment/bin/check',
       method: 'POST',
-      body: { conversationId: 'docsTest-v1', ...params },
+      body: { locale: 'tr', conversationId: 'docsTest-v1', ...params },
     });
   }
 }

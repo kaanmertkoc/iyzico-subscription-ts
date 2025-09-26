@@ -25,6 +25,7 @@ export class ProductsService {
       path: '/v2/subscription/products',
       method: 'POST',
       body: {
+        locale: 'tr',
         conversationId: `product-create-${Date.now()}`,
         ...params,
       },
@@ -45,6 +46,7 @@ export class ProductsService {
       path: `/v2/subscription/products/${referenceCode}`,
       method: 'POST',
       body: {
+        locale: 'tr',
         conversationId: `product-update-${Date.now()}`,
         productReferenceCode: referenceCode,
         ...params,
