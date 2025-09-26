@@ -49,6 +49,16 @@ export const Schemas = {
     conversationId: z.string().optional(),
   }),
 
+  UpdateProduct: z.object({
+    productReferenceCode: z
+      .string()
+      .min(1, 'Product reference code is required'),
+    name: z.string().min(1, 'Product name is required'),
+    description: z.string().optional(),
+    locale: z.string().optional(),
+    conversationId: z.string().optional(),
+  }),
+
   // Health/BIN validation
   BinCheck: z.object({
     binNumber: z
