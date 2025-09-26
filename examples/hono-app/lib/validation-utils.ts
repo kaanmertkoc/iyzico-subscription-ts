@@ -7,8 +7,6 @@ import {
   PlanPaymentType,
 } from '@kaanmertkoc/iyzico-ts';
 
-
-
 /**
  * Standardized validation error handler
  */
@@ -83,6 +81,18 @@ export const Schemas = {
     price: z.number().positive(),
     locale: z.string().optional(),
     conversationId: z.string().optional(),
+  }),
+
+  ListPaymentPlans: z.object({
+    productReferenceCode: z.string().min(1, 'Product reference required'),
+    page: z.number().optional().default(1),
+    count: z.number().optional().default(10),
+  }),
+
+  UpdatePaymentPlan: z.object({
+    name: z.string().min(1, 'Plan name required'),
+    pricingPlanReferenceCode: z.string().min(1, 'Plan reference required'),
+    trialPeriodDays: z.number().optional(),
   }),
 
   // Subscription validation
