@@ -1,7 +1,5 @@
-// packages/iyzico-sdk-ts/src/types/products.ts
-
-import { PricingPlan } from "./plans";
-import { BaseRequest, BaseResponse, SimpleResponse } from "./core";
+import { PricingPlan } from './plans';
+import { BaseRequest, BaseResponse, SimpleResponse } from './core';
 
 /**
  * Product data structure returned by the API

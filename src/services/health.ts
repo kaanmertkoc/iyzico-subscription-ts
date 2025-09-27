@@ -1,4 +1,3 @@
-// packages/iyzico-sdk-ts/src/services/health.ts
 import type { IyzicoClient } from '../client';
 import type { BinCheckRequest, BinCheckResponse } from '../types';
 

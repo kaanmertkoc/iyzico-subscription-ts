@@ -1,5 +1,3 @@
-// packages/iyzico-sdk-ts/src/types/health.ts
-
 import { BaseRequest, BaseResponse } from './core';
 
 /**

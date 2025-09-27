@@ -1,5 +1,3 @@
-// packages/iyzico-sdk-ts/src/types/subscriptions.ts
-
 import { BaseResponse } from './core';
 
 /**

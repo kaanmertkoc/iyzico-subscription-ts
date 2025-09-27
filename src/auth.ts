@@ -1,4 +1,3 @@
-// packages/iyzico-sdk-ts/src/auth.ts
 import { createHmac } from 'node:crypto'; // Use the Node.js built-in module for universal compatibility.
 import type { AuthHeaderOptions } from './types';
 

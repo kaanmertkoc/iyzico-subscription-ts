@@ -1,5 +1,3 @@
-// packages/iyzico-sdk-ts/src/types/index.ts
-
 // Re-export all types from domain-specific modules
 // This provides a clean, single import point while maintaining organization
 
@@ -10,14 +8,10 @@ export type {
   BaseRequest,
   BaseResponse,
   SimpleResponse,
-  PaginatedData
+  PaginatedData,
 } from './core';
 
-export {
-  Status,
-  PaymentInterval,
-  CurrencyCode
-} from './core';
+export { Status, PaymentInterval, CurrencyCode } from './core';
 
 export type {
   ProductData,
@@ -25,7 +19,7 @@ export type {
   CreateProductResponse,
   UpdateProductRequest,
   UpdateProductResponse,
-  DeleteProductResponse
+  DeleteProductResponse,
 } from './products';
 
 export type {
@@ -38,27 +32,21 @@ export type {
   DeletePaymentPlanResponse,
   GetPaymentPlanResponse,
   ListPaymentPlansResponse,
-  PricingPlan
+  PricingPlan,
 } from './plans';
 
-export {
-  PlanPaymentType
-} from './plans';
+export { PlanPaymentType } from './plans';
 
 export type {
   CheckoutFormData,
   InitializeCheckoutRequest,
-  CheckoutFormResponse
+  CheckoutFormResponse,
 } from './checkout';
 
 export type {
   SubscriptionData,
   UpgradeSubscriptionRequest,
-  SubscriptionResponse
+  SubscriptionResponse,
 } from './subscriptions';
 
-export type {
-  BinCheckData,
-  BinCheckRequest,
-  BinCheckResponse
-} from './health';
+export type { BinCheckData, BinCheckRequest, BinCheckResponse } from './health';

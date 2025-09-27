@@ -1,4 +1,3 @@
-// packages/iyzico-sdk-ts/src/client.ts
 import { generateAuthHeaders } from './auth';
 import type { IyzicoOptions } from './types';
 import { ProductsService } from './services/products';
@@ -99,14 +98,14 @@ export class IyzicoApiError extends IyzicoError {
     super(message, requestId);
     this.statusCode = statusCode;
     this.responseData = responseData;
-    
+
     // Use Object.defineProperty for readonly properties
     Object.defineProperty(this, 'url', {
       value: options?.url,
       writable: false,
       enumerable: true,
     });
-    
+
     Object.defineProperty(this, 'method', {
       value: options?.method,
       writable: false,
@@ -120,7 +119,7 @@ export class IyzicoApiError extends IyzicoError {
         writable: false,
         enumerable: true,
       });
-      
+
       Object.defineProperty(this, 'errorGroup', {
         value: responseData.errorGroup || responseData.type,
         writable: false,
@@ -149,7 +148,6 @@ export class IyzicoApiError extends IyzicoError {
 
     return parts.join(' | ');
   }
-
 
   /**
    * Check if the error is retryable
@@ -201,13 +199,13 @@ export class IyzicoNetworkError extends IyzicoError {
 
   constructor(message: string, cause?: Error, requestId?: string) {
     super(message, requestId);
-    
+
     Object.defineProperty(this, 'cause', {
       value: cause,
       writable: false,
       enumerable: true,
     });
-    
+
     this.isTimeout =
       message.toLowerCase().includes('timeout') || cause?.name === 'AbortError';
   }
@@ -237,7 +235,7 @@ export class IyzicoConfigError extends IyzicoError {
 
   constructor(message: string, configField?: string) {
     super(message);
-    
+
     Object.defineProperty(this, 'configField', {
       value: configField,
       writable: false,
@@ -456,7 +454,6 @@ export class IyzicoClient {
       'X-Request-ID': requestId,
     };
 
-
     try {
       // Create AbortController for timeout
       const controller = new AbortController();
@@ -503,7 +500,7 @@ export class IyzicoClient {
       const contentType = response.headers.get('content-type');
 
       if (contentType?.includes('application/json')) {
-        responseData = await response.json() as unknown;
+        responseData = (await response.json()) as unknown;
       } else {
         const textData = await response.text();
         if (this.options.debug) {
@@ -513,11 +510,17 @@ export class IyzicoClient {
       }
 
       if (this.options.debug) {
-        const debugData = responseData && typeof responseData === 'object' ? responseData as Record<string, unknown> : {};
+        const debugData =
+          responseData && typeof responseData === 'object'
+            ? (responseData as Record<string, unknown>)
+            : {};
         console.log('[IyzicoSDK] Request completed successfully:', {
           requestId,
           status: response.status,
-          dataKeys: responseData && typeof responseData === 'object' ? Object.keys(debugData) : [],
+          dataKeys:
+            responseData && typeof responseData === 'object'
+              ? Object.keys(debugData)
+              : [],
           success: debugData?.status === 'success',
         });
       }
@@ -531,7 +534,7 @@ export class IyzicoClient {
               attempt: retryCount + 1,
               maxRetries: this.options.maxRetries,
               status: response.status,
-              requestId
+              requestId,
             });
           }
 
@@ -544,10 +547,11 @@ export class IyzicoClient {
           });
         }
 
-        const errorData = responseData && typeof responseData === 'object' 
-          ? responseData as IyzicoApiErrorResponse 
-          : {};
-          
+        const errorData =
+          responseData && typeof responseData === 'object'
+            ? (responseData as IyzicoApiErrorResponse)
+            : {};
+
         throw new IyzicoApiError(
           errorData?.errorMessage ||
             errorData?.message ||
@@ -569,10 +573,10 @@ export class IyzicoClient {
           error: error instanceof Error ? error.message : String(error),
           errorType: error instanceof Error ? error.name : typeof error,
           requestId,
-          url
+          url,
         });
       }
-      
+
       // Handle AbortError (timeout)
       if (error instanceof Error && error.name === 'AbortError') {
         throw new IyzicoNetworkError(
