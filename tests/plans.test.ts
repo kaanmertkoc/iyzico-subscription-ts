@@ -207,7 +207,7 @@ describe('PlansService', () => {
       const createParams = {
         name: '', // Invalid empty name
         price: -10, // Invalid negative price
-        paymentInterval: PaymentInterval.MONTH,
+        paymentInterval: PaymentInterval.MONTHLY,
         paymentIntervalCount: 1,
         planPaymentType: PlanPaymentType.RECURRING,
         currencyCode: CurrencyCode.TRY,
