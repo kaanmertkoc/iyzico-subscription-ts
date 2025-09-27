@@ -207,7 +207,7 @@ describe('PlansService', () => {
       const createParams = {
         name: '', // Invalid empty name
         price: -10, // Invalid negative price
-        paymentInterval: PaymentInterval.MONTHLY,
+        paymentInterval: PaymentInterval.MONTH,
         paymentIntervalCount: 1,
         planPaymentType: PlanPaymentType.RECURRING,
         currencyCode: CurrencyCode.TRY,
@@ -220,20 +220,19 @@ describe('PlansService', () => {
       });
       mockClient.request = vi.fn().mockRejectedValue(apiError);
 
-      // Act & Assert
-      await expect(
-        plansService.create(productReferenceCode, createParams)
-      ).rejects.toThrow(IyzicoApiError);
-
+      // Act
+      let caughtError: unknown;
       try {
         await plansService.create(productReferenceCode, createParams);
       } catch (error) {
-        if (error instanceof IyzicoApiError) {
-          expect(error.statusCode).toBe(400);
-          expect(error.isClientError()).toBe(true);
-        }
+        caughtError = error;
       }
 
+      // Assert
+      expect(caughtError).toBeInstanceOf(IyzicoApiError);
+      const err = caughtError as IyzicoApiError;
+      expect(err.statusCode).toBe(400);
+      expect(err.isClientError()).toBe(true);
       expect(mockClient.request).toHaveBeenCalledOnce();
     });
 
