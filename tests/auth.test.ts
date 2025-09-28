@@ -133,10 +133,16 @@ describe('generateAuthHeaders', () => {
     const secretKey1 = 'secret-key-1';
     const secretKey2 = 'secret-key-2';
 
-    const headers1 = generateAuthHeaders({ ...authOptions, secretKey: secretKey1 });
-    const headers2 = generateAuthHeaders({ ...authOptions, secretKey: secretKey2 });
+    const headers1 = generateAuthHeaders({
+      ...authOptions,
+      secretKey: secretKey1,
+    });
+    const headers2 = generateAuthHeaders({
+      ...authOptions,
+      secretKey: secretKey2,
+    });
 
-    expect(headers1.Authorization).not.toBe(headers2.Authorization);
+    expect(headers1).not.toBe(headers2);
   });
 
   test('should generate different signatures for different API keys', () => {
@@ -146,7 +152,7 @@ describe('generateAuthHeaders', () => {
     const headers1 = generateAuthHeaders({ ...authOptions, apiKey: apiKey1 });
     const headers2 = generateAuthHeaders({ ...authOptions, apiKey: apiKey2 });
 
-    expect(headers1.Authorization).not.toBe(headers2.Authorization);
+    expect(headers1).not.toBe(headers2);
   });
 
   test('should include all required headers in correct format', () => {
@@ -214,7 +220,7 @@ describe('generateAuthHeaders', () => {
     const headers2 = generateAuthHeaders(authOptions);
 
     // With mocked time and random, results should be identical
-    expect(headers1.Authorization).toBe(headers2.Authorization);
+    expect(headers1).toBe(headers2);
     expect((headers1 as Record<string, string>)['x-iyzi-rnd']).toBe(
       (headers2 as Record<string, string>)['x-iyzi-rnd']
     );

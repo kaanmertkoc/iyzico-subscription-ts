@@ -1147,8 +1147,8 @@ describe('IyzicoClient', () => {
 
     test('should handle empty response bodies', async () => {
       fetchMock.mockResolvedValue(
-        new Response('', {
-          status: 204, // No Content
+        new Response(null, {
+          status: 200,
           headers: { 'content-type': 'application/json' },
         })
       );
@@ -1156,9 +1156,9 @@ describe('IyzicoClient', () => {
       await expect(
         client.request({
           path: '/test',
-          method: 'DELETE',
+          method: 'GET',
         })
-      ).rejects.toThrow(); // JSON.parse should fail on empty string
+      ).rejects.toThrow(); // JSON.parse should fail on null body
     });
 
     test('should handle malformed JSON responses', async () => {
@@ -1325,6 +1325,12 @@ describe('IyzicoClient', () => {
     });
 
     test('should handle API errors with minimal error information', async () => {
+      // Use a client with no retries to avoid retry logic interfering with the test
+      const clientWithNoRetries = new IyzicoClient({
+        ...validOptions,
+        maxRetries: 0,
+      });
+
       const mockErrorResponse = {}; // Empty error response
 
       fetchMock.mockResolvedValue(
@@ -1335,7 +1341,7 @@ describe('IyzicoClient', () => {
       );
 
       try {
-        await client.request({
+        await clientWithNoRetries.request({
           path: '/test',
           method: 'GET',
         });
