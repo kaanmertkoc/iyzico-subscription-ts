@@ -876,4 +876,521 @@ describe('IyzicoClient', () => {
       consoleSpy.mockRestore();
     });
   });
+
+  describe('retry logic', () => {
+    test('should retry on server errors up to maxRetries limit', async () => {
+      const clientWithLimitedRetries = new IyzicoClient({
+        ...validOptions,
+        maxRetries: 2,
+      });
+
+      const mockErrorResponse = { errorMessage: 'Internal Server Error' };
+      
+      // Mock 3 failures (initial + 2 retries), no success
+      fetchMock
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify(mockErrorResponse), {
+            status: 500,
+            headers: { 'content-type': 'application/json' },
+          })
+        )
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify(mockErrorResponse), {
+            status: 502,
+            headers: { 'content-type': 'application/json' },
+          })
+        )
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify(mockErrorResponse), {
+            status: 503,
+            headers: { 'content-type': 'application/json' },
+          })
+        );
+
+      await expect(
+        clientWithLimitedRetries.request({
+          path: '/test',
+          method: 'GET',
+        })
+      ).rejects.toThrow(IyzicoApiError);
+
+      // Should make initial request + 2 retries = 3 total calls
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+
+    test('should retry on 429 rate limit errors', async () => {
+      const mockErrorResponse = { errorMessage: 'Too Many Requests' };
+      const mockSuccessResponse = { status: 'success', data: { id: '123' } };
+
+      // First call fails with 429, second succeeds
+      fetchMock
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify(mockErrorResponse), {
+            status: 429,
+            headers: { 'content-type': 'application/json' },
+          })
+        )
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify(mockSuccessResponse), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          })
+        );
+
+      const result = await client.request({
+        path: '/test',
+        method: 'GET',
+      });
+
+      expect(result).toEqual(mockSuccessResponse);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    test('should retry on 408 request timeout errors', async () => {
+      const mockErrorResponse = { errorMessage: 'Request Timeout' };
+      const mockSuccessResponse = { status: 'success', data: { id: '123' } };
+
+      // First call fails with 408, second succeeds
+      fetchMock
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify(mockErrorResponse), {
+            status: 408,
+            headers: { 'content-type': 'application/json' },
+          })
+        )
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify(mockSuccessResponse), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          })
+        );
+
+      const result = await client.request({
+        path: '/test',
+        method: 'GET',
+      });
+
+      expect(result).toEqual(mockSuccessResponse);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    test('should not retry on client errors (4xx except specific codes)', async () => {
+      const mockErrorResponse = { errorMessage: 'Bad Request' };
+
+      fetchMock.mockResolvedValueOnce(
+        new Response(JSON.stringify(mockErrorResponse), {
+          status: 400,
+          headers: { 'content-type': 'application/json' },
+        })
+      );
+
+      await expect(
+        client.request({
+          path: '/test',
+          method: 'GET',
+        })
+      ).rejects.toThrow(IyzicoApiError);
+
+      // Should only make one call - no retries for 400 errors
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    test('should not retry when maxRetries is 0', async () => {
+      const clientWithNoRetries = new IyzicoClient({
+        ...validOptions,
+        maxRetries: 0,
+      });
+
+      const mockErrorResponse = { errorMessage: 'Internal Server Error' };
+
+      fetchMock.mockResolvedValueOnce(
+        new Response(JSON.stringify(mockErrorResponse), {
+          status: 500,
+          headers: { 'content-type': 'application/json' },
+        })
+      );
+
+      await expect(
+        clientWithNoRetries.request({
+          path: '/test',
+          method: 'GET',
+        })
+      ).rejects.toThrow(IyzicoApiError);
+
+      // Should only make one call - no retries
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('request body handling', () => {
+    test('should not include body for GET requests', async () => {
+      const mockResponse = { status: 'success', data: { id: '123' } };
+      fetchMock.mockResolvedValue(
+        new Response(JSON.stringify(mockResponse), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      );
+
+      await client.request({
+        path: '/test',
+        method: 'GET',
+        body: { shouldBeIgnored: true },
+      });
+
+      const [, options] = fetchMock.mock.calls[0] as [string, RequestInit | undefined];
+      expect(options?.body).toBe(null);
+    });
+
+    test('should not include body for DELETE requests', async () => {
+      const mockResponse = { status: 'success' };
+      fetchMock.mockResolvedValue(
+        new Response(JSON.stringify(mockResponse), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      );
+
+      await client.request({
+        path: '/test',
+        method: 'DELETE',
+        body: { shouldBeIgnored: true },
+      });
+
+      const [, options] = fetchMock.mock.calls[0] as [string, RequestInit | undefined];
+      expect(options?.body).toBe(null);
+    });
+
+    test('should include body for POST requests', async () => {
+      const mockResponse = { status: 'success', data: { id: '123' } };
+      const requestBody = { name: 'Test Product' };
+
+      fetchMock.mockResolvedValue(
+        new Response(JSON.stringify(mockResponse), {
+          status: 201,
+          headers: { 'content-type': 'application/json' },
+        })
+      );
+
+      await client.request({
+        path: '/test',
+        method: 'POST',
+        body: requestBody,
+      });
+
+      const [, options] = fetchMock.mock.calls[0] as [string, RequestInit | undefined];
+      expect(options?.body).toBe(JSON.stringify(requestBody));
+    });
+
+    test('should include body for PUT requests', async () => {
+      const mockResponse = { status: 'success', data: { id: '123' } };
+      const requestBody = { name: 'Updated Product' };
+
+      fetchMock.mockResolvedValue(
+        new Response(JSON.stringify(mockResponse), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      );
+
+      await client.request({
+        path: '/test',
+        method: 'PUT',
+        body: requestBody,
+      });
+
+      const [, options] = fetchMock.mock.calls[0] as [string, RequestInit | undefined];
+      expect(options?.body).toBe(JSON.stringify(requestBody));
+    });
+  });
+
+  describe('response handling', () => {
+    test('should handle successful responses with JSON content type', async () => {
+      const mockResponse = {
+        status: 'success',
+        data: { id: '123', name: 'Test Product' },
+        systemTime: 1640995200000,
+      };
+
+      fetchMock.mockResolvedValue(
+        new Response(JSON.stringify(mockResponse), {
+          status: 200,
+          headers: { 'content-type': 'application/json; charset=utf-8' },
+        })
+      );
+
+      const result = await client.request({
+        path: '/test',
+        method: 'GET',
+      });
+
+      expect(result).toEqual(mockResponse);
+    });
+
+    test('should handle responses without content-type header', async () => {
+      const responseText = '{"status":"success","data":{"id":"123"}}';
+
+      fetchMock.mockResolvedValue(
+        new Response(responseText, {
+          status: 200,
+          headers: {}, // No content-type header
+        })
+      );
+
+      const result = await client.request({
+        path: '/test',
+        method: 'GET',
+      });
+
+      expect(result).toEqual({ rawResponse: responseText });
+    });
+
+    test('should handle empty response bodies', async () => {
+      fetchMock.mockResolvedValue(
+        new Response('', {
+          status: 204, // No Content
+          headers: { 'content-type': 'application/json' },
+        })
+      );
+
+      await expect(
+        client.request({
+          path: '/test',
+          method: 'DELETE',
+        })
+      ).rejects.toThrow(); // JSON.parse should fail on empty string
+    });
+
+    test('should handle malformed JSON responses', async () => {
+      fetchMock.mockResolvedValue(
+        new Response('invalid json content', {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      );
+
+      await expect(
+        client.request({
+          path: '/test',
+          method: 'GET',
+        })
+      ).rejects.toThrow(); // JSON.parse should fail
+    });
+  });
+
+  describe('authentication header handling', () => {
+    test('should use production credentials for production client', async () => {
+      const mockResponse = { status: 'success' };
+      fetchMock.mockResolvedValue(
+        new Response(JSON.stringify(mockResponse), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      );
+
+      await client.request({
+        path: '/test',
+        method: 'POST',
+        body: { test: 'data' },
+      });
+
+      const [, options] = fetchMock.mock.calls[0] as [string, RequestInit | undefined];
+      const headers = options?.headers as Record<string, string>;
+
+      expect(headers.Authorization).toMatch(/^IYZWSv2 /);
+      expect(headers['x-iyzi-rnd']).toMatch(/^\d+$/);
+      expect(headers['Content-Type']).toBe('application/json');
+      expect(headers['Accept']).toBe('application/json');
+      expect(headers['X-Request-ID']).toMatch(/^req_\d+_[a-z0-9]{9}$/);
+    });
+
+    test('should use sandbox credentials for sandbox client', async () => {
+      const sandboxClient = new IyzicoClient({
+        ...validOptions,
+        isSandbox: true,
+        sandboxApiKey: 'test-sandbox-api',
+        sandboxSecretKey: 'test-sandbox-secret',
+      });
+
+      const mockResponse = { status: 'success' };
+      fetchMock.mockResolvedValue(
+        new Response(JSON.stringify(mockResponse), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      );
+
+      await sandboxClient.request({
+        path: '/test',
+        method: 'POST',
+        body: { test: 'data' },
+      });
+
+      const [, options] = fetchMock.mock.calls[0] as [string, RequestInit | undefined];
+      const headers = options?.headers as Record<string, string>;
+
+      expect(headers.Authorization).toMatch(/^IYZWSv2 /);
+      expect(headers['x-iyzi-rnd']).toMatch(/^\d+$/);
+    });
+  });
+
+  describe('error handling edge cases', () => {
+    test('should handle generic network errors', async () => {
+      fetchMock.mockRejectedValue(new Error('Generic network error'));
+
+      await expect(
+        client.request({
+          path: '/test',
+          method: 'GET',
+        })
+      ).rejects.toThrow(IyzicoNetworkError);
+
+      await expect(
+        client.request({
+          path: '/test',
+          method: 'GET',
+        })
+      ).rejects.toThrow('Unexpected error: Generic network error');
+    });
+
+    test('should handle non-Error objects being thrown', async () => {
+      fetchMock.mockRejectedValue('string error');
+
+      try {
+        await client.request({
+          path: '/test',
+          method: 'GET',
+        });
+        throw new Error('Expected error was not thrown');
+      } catch (error) {
+        expect(error).toBeInstanceOf(IyzicoNetworkError);
+        expect((error as IyzicoNetworkError).message).toBe('Unexpected error: string error');
+        expect((error as IyzicoNetworkError).cause).toBeUndefined();
+      }
+    });
+
+    test('should preserve and re-throw IyzicoError subclasses', async () => {
+      const originalError = new IyzicoConfigError('Config error', 'apiKey');
+      fetchMock.mockRejectedValue(originalError);
+
+      await expect(
+        client.request({
+          path: '/test',
+          method: 'GET',
+        })
+      ).rejects.toThrow(originalError);
+
+      // Should be the exact same error instance
+      try {
+        await client.request({
+          path: '/test',
+          method: 'GET',
+        });
+      } catch (error) {
+        expect(error).toBe(originalError);
+        expect(error).toBeInstanceOf(IyzicoConfigError);
+      }
+    });
+
+    test('should handle API errors with alternative error message formats', async () => {
+      const mockErrorResponse = {
+        status: 'failure',
+        message: 'Alternative error message format', // Using 'message' instead of 'errorMessage'
+        code: 'ALT_ERROR_CODE', // Using 'code' instead of 'errorCode'
+        type: 'ALT_ERROR_TYPE', // Using 'type' instead of 'errorGroup'
+      };
+
+      fetchMock.mockResolvedValue(
+        new Response(JSON.stringify(mockErrorResponse), {
+          status: 400,
+          headers: { 'content-type': 'application/json' },
+        })
+      );
+
+      try {
+        await client.request({
+          path: '/test',
+          method: 'POST',
+          body: { test: 'data' },
+        });
+        throw new Error('Expected error was not thrown');
+      } catch (error) {
+        expect(error).toBeInstanceOf(IyzicoApiError);
+
+        const apiError = error as IyzicoApiError;
+        expect(apiError.message).toBe('Alternative error message format');
+        expect(apiError.errorCode).toBe('ALT_ERROR_CODE');
+        expect(apiError.errorGroup).toBe('ALT_ERROR_TYPE');
+      }
+    });
+
+    test('should handle API errors with minimal error information', async () => {
+      const mockErrorResponse = {}; // Empty error response
+
+      fetchMock.mockResolvedValue(
+        new Response(JSON.stringify(mockErrorResponse), {
+          status: 500,
+          headers: { 'content-type': 'application/json' },
+        })
+      );
+
+      try {
+        await client.request({
+          path: '/test',
+          method: 'GET',
+        });
+        throw new Error('Expected error was not thrown');
+      } catch (error) {
+        expect(error).toBeInstanceOf(IyzicoApiError);
+
+        const apiError = error as IyzicoApiError;
+        expect(apiError.message).toBe('HTTP 500'); // Fallback message
+        expect(apiError.statusCode).toBe(500);
+        expect(apiError.errorCode).toBeUndefined();
+        expect(apiError.errorGroup).toBeUndefined();
+      }
+    });
+  });
+
+  describe('getConfig method', () => {
+    test('should return configuration without sensitive data for production client', () => {
+      const config = client.getConfig();
+      
+      expect(config).toEqual({
+        baseUrl: IYZICO_BASE_URL,
+        timeout: 30000,
+        maxRetries: 3,
+        debug: false,
+        isSandbox: false,
+        environment: 'production',
+        apiKey: 'test-api-key',
+        sandboxApiKey: undefined,
+      });
+    });
+
+    test('should return sandbox configuration for sandbox client', () => {
+      const sandboxClient = new IyzicoClient({
+        ...validOptions,
+        isSandbox: true,
+        sandboxApiKey: 'test-sandbox-api-key',
+        sandboxSecretKey: 'test-sandbox-secret-key',
+        timeout: 15000,
+        maxRetries: 5,
+        debug: true,
+      });
+
+      const config = sandboxClient.getConfig();
+      
+      expect(config).toEqual({
+        baseUrl: IYZICO_SANDBOX_BASE_URL,
+        timeout: 15000,
+        maxRetries: 5,
+        debug: true,
+        isSandbox: true,
+        environment: 'sandbox',
+        apiKey: 'test-sandbox-api-key',
+        sandboxApiKey: 'test-sandbox-api-key',
+      });
+    });
+  });
 });
