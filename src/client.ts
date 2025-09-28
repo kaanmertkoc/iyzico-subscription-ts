@@ -1,5 +1,5 @@
-import { generateAuthHeaders } from './auth';
-import type { IyzicoOptions } from './types';
+import { AuthManager } from './auth';
+import type { IyzicoOptions, AuthManagerConfig } from './types';
 import { ProductsService } from './services/products';
 import { PlansService } from './services/plans';
 import { CheckoutService } from './services/checkout';
@@ -35,6 +35,12 @@ export interface IyzicoClientOptions extends IyzicoOptions {
   debug?: boolean;
   /** Use sandbox environment instead of production (default: false) */
   isSandbox?: boolean;
+  /** Authentication manager configuration */
+  authConfig?: AuthManagerConfig;
+  /** User agent string for requests */
+  userAgent?: string;
+  /** Custom headers to include with all requests */
+  defaultHeaders?: Record<string, string>;
 }
 
 /**
@@ -284,11 +290,17 @@ export class IyzicoConfigError extends IyzicoError {
  */
 export class IyzicoClient {
   private readonly options: Required<
-    Omit<IyzicoClientOptions, 'sandboxApiKey' | 'sandboxSecretKey'>
+    Omit<IyzicoClientOptions, 'sandboxApiKey' | 'sandboxSecretKey' | 'authConfig' | 'userAgent' | 'defaultHeaders'>
   > & {
     sandboxApiKey?: string;
     sandboxSecretKey?: string;
+    authConfig?: AuthManagerConfig;
+    userAgent?: string;
+    defaultHeaders?: Record<string, string>;
   };
+
+  /** Authentication manager for generating secure headers */
+  private readonly authManager: AuthManager;
 
   /** Service for managing products */
   public readonly products: ProductsService;
@@ -350,8 +362,15 @@ export class IyzicoClient {
       maxRetries: 3,
       debug: false,
       isSandbox: options.isSandbox || false,
+      defaultHeaders: {},
       ...options,
     };
+
+    // Initialize authentication manager
+    this.authManager = new AuthManager({
+      debug: this.options.debug,
+      ...this.options.authConfig,
+    });
 
     // Validate baseUrl format
     try {
@@ -436,8 +455,8 @@ export class IyzicoClient {
       );
     }
 
-    // Generate authentication headers
-    const headers = generateAuthHeaders({
+    // Generate authentication headers using AuthManager
+    const authResult = this.authManager.generateAuthHeaders({
       apiKey: this.options.isSandbox
         ? this.options.sandboxApiKey!
         : this.options.apiKey,
@@ -448,11 +467,20 @@ export class IyzicoClient {
       body: requestBodyString,
     });
 
-    // Add request ID for tracking (create proper headers object)
+    // Combine auth headers with default headers and request tracking
     const requestHeaders: Record<string, string> = {
-      ...(headers as Record<string, string>),
+      ...this.options.defaultHeaders,
+      Authorization: authResult.headers.Authorization,
+      'x-iyzi-rnd': authResult.headers['x-iyzi-rnd'],
+      'Content-Type': authResult.headers['Content-Type'],
+      Accept: authResult.headers.Accept,
       'X-Request-ID': requestId,
     };
+
+    // Add user agent if provided
+    if (this.options.userAgent) {
+      requestHeaders['User-Agent'] = this.options.userAgent;
+    }
 
     try {
       // Create AbortController for timeout

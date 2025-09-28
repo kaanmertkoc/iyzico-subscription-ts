@@ -3,13 +3,21 @@
 
 export type {
   IyzicoOptions,
-  AuthHeaderOptions,
   Address,
   BaseRequest,
   BaseResponse,
   SimpleResponse,
   PaginatedData,
 } from './core';
+
+export type {
+  AuthConfig,
+  IyzicoAuthHeaders,
+  AuthPayload,
+  AuthString,
+  AuthResult,
+  AuthManagerConfig,
+} from './auth';
 
 export { Status, PaymentInterval, CurrencyCode } from './core';
 

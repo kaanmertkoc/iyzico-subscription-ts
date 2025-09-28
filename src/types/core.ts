@@ -36,16 +36,6 @@ export interface IyzicoOptions {
   baseUrl?: string;
 }
 
-/**
- * Authentication header generation options
- * @internal
- */
-export interface AuthHeaderOptions {
-  apiKey: string;
-  secretKey: string;
-  path: string;
-  body: string;
-}
 
 /**
  * Base request structure with common optional fields
