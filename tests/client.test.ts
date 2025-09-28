@@ -2,12 +2,14 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import {
   IYZICO_BASE_URL,
   IYZICO_SANDBOX_BASE_URL,
-  IyzicoApiError,
   IyzicoClient,
+} from '../src/client';
+import {
+  IyzicoApiError,
   IyzicoConfigError,
   IyzicoError,
   IyzicoNetworkError,
-} from '../src/client';
+} from '../src/error';
 
 // Mock fetch globally
 const mockFetch = vi.fn<typeof fetch>();
@@ -654,7 +656,6 @@ describe('IyzicoClient', () => {
         );
       });
 
-
       test('should correctly identify error types', () => {
         const clientError = new IyzicoApiError('Client error', 400, {});
         expect(clientError.isClientError()).toBe(true);
@@ -839,7 +840,7 @@ describe('IyzicoClient', () => {
           retryAttempt: 0,
         })
       );
-      
+
       expect(consoleSpy).toHaveBeenCalledWith(
         '[IyzicoSDK] Making HTTP request:',
         expect.objectContaining({
@@ -885,7 +886,7 @@ describe('IyzicoClient', () => {
       });
 
       const mockErrorResponse = { errorMessage: 'Internal Server Error' };
-      
+
       // Mock 3 failures (initial + 2 retries), no success
       fetchMock
         .mockResolvedValueOnce(
@@ -1038,7 +1039,10 @@ describe('IyzicoClient', () => {
         body: { shouldBeIgnored: true },
       });
 
-      const [, options] = fetchMock.mock.calls[0] as [string, RequestInit | undefined];
+      const [, options] = fetchMock.mock.calls[0] as [
+        string,
+        RequestInit | undefined,
+      ];
       expect(options?.body).toBe(null);
     });
 
@@ -1057,7 +1061,10 @@ describe('IyzicoClient', () => {
         body: { shouldBeIgnored: true },
       });
 
-      const [, options] = fetchMock.mock.calls[0] as [string, RequestInit | undefined];
+      const [, options] = fetchMock.mock.calls[0] as [
+        string,
+        RequestInit | undefined,
+      ];
       expect(options?.body).toBe(null);
     });
 
@@ -1078,7 +1085,10 @@ describe('IyzicoClient', () => {
         body: requestBody,
       });
 
-      const [, options] = fetchMock.mock.calls[0] as [string, RequestInit | undefined];
+      const [, options] = fetchMock.mock.calls[0] as [
+        string,
+        RequestInit | undefined,
+      ];
       expect(options?.body).toBe(JSON.stringify(requestBody));
     });
 
@@ -1099,7 +1109,10 @@ describe('IyzicoClient', () => {
         body: requestBody,
       });
 
-      const [, options] = fetchMock.mock.calls[0] as [string, RequestInit | undefined];
+      const [, options] = fetchMock.mock.calls[0] as [
+        string,
+        RequestInit | undefined,
+      ];
       expect(options?.body).toBe(JSON.stringify(requestBody));
     });
   });
@@ -1194,7 +1207,10 @@ describe('IyzicoClient', () => {
         body: { test: 'data' },
       });
 
-      const [, options] = fetchMock.mock.calls[0] as [string, RequestInit | undefined];
+      const [, options] = fetchMock.mock.calls[0] as [
+        string,
+        RequestInit | undefined,
+      ];
       const headers = options?.headers as Record<string, string>;
 
       expect(headers.Authorization).toMatch(/^IYZWSv2 /);
@@ -1226,7 +1242,10 @@ describe('IyzicoClient', () => {
         body: { test: 'data' },
       });
 
-      const [, options] = fetchMock.mock.calls[0] as [string, RequestInit | undefined];
+      const [, options] = fetchMock.mock.calls[0] as [
+        string,
+        RequestInit | undefined,
+      ];
       const headers = options?.headers as Record<string, string>;
 
       expect(headers.Authorization).toMatch(/^IYZWSv2 /);
@@ -1264,7 +1283,9 @@ describe('IyzicoClient', () => {
         throw new Error('Expected error was not thrown');
       } catch (error) {
         expect(error).toBeInstanceOf(IyzicoNetworkError);
-        expect((error as IyzicoNetworkError).message).toBe('Unexpected error: string error');
+        expect((error as IyzicoNetworkError).message).toBe(
+          'Unexpected error: string error'
+        );
         expect((error as IyzicoNetworkError).cause).toBeUndefined();
       }
     });
@@ -1361,7 +1382,7 @@ describe('IyzicoClient', () => {
   describe('getConfig method', () => {
     test('should return configuration without sensitive data for production client', () => {
       const config = client.getConfig();
-      
+
       expect(config).toEqual({
         baseUrl: IYZICO_BASE_URL,
         timeout: 30000,
@@ -1386,7 +1407,7 @@ describe('IyzicoClient', () => {
       });
 
       const config = sandboxClient.getConfig();
-      
+
       expect(config).toEqual({
         baseUrl: IYZICO_SANDBOX_BASE_URL,
         timeout: 15000,

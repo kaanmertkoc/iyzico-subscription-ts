@@ -1,9 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import {
-  IyzicoApiError,
-  IyzicoNetworkError,
-  type IyzicoClient,
-} from '../src/client';
+import { type IyzicoClient } from '../src/client';
+import { IyzicoApiError, IyzicoNetworkError } from '../src/error';
 import { PlansService } from '../src/services/plans';
 import { CurrencyCode, PaymentInterval, Status } from '../src/types/core';
 import type {
@@ -13,7 +10,7 @@ import type {
   ListPaymentPlansResponse,
   PaymentPlanData,
   PaymentPlanResponse,
-  UpdatePaymentPlanResponse
+  UpdatePaymentPlanResponse,
 } from '../src/types/plans';
 import { PlanPaymentType } from '../src/types/plans';
 
@@ -69,7 +66,10 @@ describe('PlansService', () => {
       mockClient.request = vi.fn().mockResolvedValue(expectedResponse);
 
       // Act
-      const result = await plansService.create(productReferenceCode, createParams);
+      const result = await plansService.create(
+        productReferenceCode,
+        createParams
+      );
 
       // Assert
       expect(result).toEqual(expectedResponse);
@@ -213,11 +213,15 @@ describe('PlansService', () => {
         currencyCode: CurrencyCode.TRY,
       };
 
-      const apiError = new IyzicoApiError('Plan name cannot be empty and price must be positive', 400, {
-        status: 'failure',
-        errorMessage: 'Plan name cannot be empty and price must be positive',
-        errorCode: 'VALIDATION_ERROR',
-      });
+      const apiError = new IyzicoApiError(
+        'Plan name cannot be empty and price must be positive',
+        400,
+        {
+          status: 'failure',
+          errorMessage: 'Plan name cannot be empty and price must be positive',
+          errorCode: 'VALIDATION_ERROR',
+        }
+      );
       mockClient.request = vi.fn().mockRejectedValue(apiError);
 
       // Act
@@ -293,7 +297,10 @@ describe('PlansService', () => {
       mockClient.request = vi.fn().mockResolvedValue(expectedResponse);
 
       // Act
-      const result = await plansService.update(pricingPlanReferenceCode, updateParams);
+      const result = await plansService.update(
+        pricingPlanReferenceCode,
+        updateParams
+      );
 
       // Assert
       expect(result).toEqual(expectedResponse);
@@ -420,9 +427,9 @@ describe('PlansService', () => {
       mockClient.request = vi.fn().mockRejectedValue(notFoundError);
 
       // Act & Assert
-      await expect(plansService.delete(pricingPlanReferenceCode)).rejects.toThrow(
-        IyzicoApiError
-      );
+      await expect(
+        plansService.delete(pricingPlanReferenceCode)
+      ).rejects.toThrow(IyzicoApiError);
 
       expect(mockClient.request).toHaveBeenCalledWith({
         path: `/v2/subscription/pricing-plans/${pricingPlanReferenceCode}`,
@@ -445,9 +452,9 @@ describe('PlansService', () => {
       mockClient.request = vi.fn().mockRejectedValue(activeSubsError);
 
       // Act & Assert
-      await expect(plansService.delete(pricingPlanReferenceCode)).rejects.toThrow(
-        IyzicoApiError
-      );
+      await expect(
+        plansService.delete(pricingPlanReferenceCode)
+      ).rejects.toThrow(IyzicoApiError);
 
       try {
         await plansService.delete(pricingPlanReferenceCode);
@@ -510,9 +517,9 @@ describe('PlansService', () => {
       mockClient.request = vi.fn().mockRejectedValue(notFoundError);
 
       // Act & Assert
-      await expect(plansService.retrieve(pricingPlanReferenceCode)).rejects.toThrow(
-        IyzicoApiError
-      );
+      await expect(
+        plansService.retrieve(pricingPlanReferenceCode)
+      ).rejects.toThrow(IyzicoApiError);
 
       expect(mockClient.request).toHaveBeenCalledWith({
         path: `/v2/subscription/pricing-plans/${pricingPlanReferenceCode}`,
@@ -730,10 +737,16 @@ describe('PlansService', () => {
       // Assert
       expect(result.data?.items).toHaveLength(count);
       expect(result.data?.items?.[0].referenceCode).toBe('PLAN_0000');
-      expect(result.data?.items?.[count - 1].referenceCode).toBe(`PLAN_${(count - 1).toString().padStart(4, '0')}`);
-      
-      const activeCount = result.data?.items?.filter((p) => p.status === Status.ACTIVE).length;
-      const inactiveCount = result.data?.items?.filter((p) => p.status === Status.INACTIVE).length;
+      expect(result.data?.items?.[count - 1].referenceCode).toBe(
+        `PLAN_${(count - 1).toString().padStart(4, '0')}`
+      );
+
+      const activeCount = result.data?.items?.filter(
+        (p) => p.status === Status.ACTIVE
+      ).length;
+      const inactiveCount = result.data?.items?.filter(
+        (p) => p.status === Status.INACTIVE
+      ).length;
       expect(activeCount).toBe(Math.ceil(count / 3));
       expect(inactiveCount).toBe(count - Math.ceil(count / 3));
     });
@@ -754,7 +767,9 @@ describe('PlansService', () => {
       mockClient.request = vi.fn().mockRejectedValue(serviceError);
 
       // Act & Assert
-      await expect(plansService.list(productReferenceCode)).rejects.toThrow(IyzicoApiError);
+      await expect(plansService.list(productReferenceCode)).rejects.toThrow(
+        IyzicoApiError
+      );
 
       try {
         await plansService.list(productReferenceCode);
@@ -863,7 +878,9 @@ describe('PlansService', () => {
         { path: string; method: string; body: Record<string, unknown> },
       ];
       expect(callArgs.body.conversationId).toMatch(/^plan-update-\d+$/);
-      expect(callArgs.body.pricingPlanReferenceCode).toBe(pricingPlanReferenceCode);
+      expect(callArgs.body.pricingPlanReferenceCode).toBe(
+        pricingPlanReferenceCode
+      );
       expect(callArgs.body.name).toBe('Updated Name');
       expect(callArgs.body.trialPeriodDays).toBe(14);
     });
@@ -924,7 +941,10 @@ describe('PlansService', () => {
         .mockResolvedValueOnce(retrieveResponse); // For retrieve
 
       // Act
-      const createResult = await plansService.create(productReferenceCode, createParams);
+      const createResult = await plansService.create(
+        productReferenceCode,
+        createParams
+      );
       const retrieveResult = await plansService.retrieve(
         createResult.data!.referenceCode
       );

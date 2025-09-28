@@ -1,11 +1,12 @@
+export { IyzicoClient } from './client';
+
 export {
-  IyzicoClient,
   IyzicoError,
   IyzicoApiError,
   IyzicoNetworkError,
   IyzicoConfigError,
   type IyzicoClientOptions,
-} from './client';
+} from './error';
 
 export * from './types';
 

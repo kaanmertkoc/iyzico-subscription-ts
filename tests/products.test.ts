@@ -1,9 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import {
-  IyzicoApiError,
-  IyzicoNetworkError,
-  type IyzicoClient,
-} from '../src/client';
+import { type IyzicoClient } from '../src/client';
 import { ProductsService } from '../src/services/products';
 import type {
   CreateProductRequest,
@@ -13,7 +9,7 @@ import type {
 } from '../src/types';
 import { CurrencyCode, PaymentInterval, Status } from '../src/types/core';
 import { PlanPaymentType } from '../src/types/plans';
-
+import { IyzicoApiError, IyzicoNetworkError } from '../src/error';
 // Create a mock client
 const mockClient = {
   request: vi.fn(),

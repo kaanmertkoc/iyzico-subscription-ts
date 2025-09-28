@@ -1,5 +1,5 @@
 import { createHmac } from 'node:crypto';
-import { IyzicoConfigError } from './client';
+import { IyzicoConfigError } from './error';
 import type {
   AuthConfig,
   IyzicoAuthHeaders,
