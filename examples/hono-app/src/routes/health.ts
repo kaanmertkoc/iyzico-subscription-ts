@@ -5,7 +5,6 @@ import { errorHandler, success } from '../../lib/error-handler';
 
 const healthRoutes = new Hono();
 
-// Apply error handling middleware
 healthRoutes.use('*', errorHandler.middleware());
 
 healthRoutes.get('/bin', validator('query', Schemas.Query.bin), async (c) => {

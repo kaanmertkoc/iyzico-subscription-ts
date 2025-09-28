@@ -6,10 +6,9 @@ import type { UpgradeSubscriptionRequest } from '@kaanmertkoc/iyzico-ts';
 
 const subscriptionsRoutes = new Hono();
 
-// Apply error handling middleware
 subscriptionsRoutes.use('*', errorHandler.middleware());
 
-// UPGRADE Subscription - Using your exact SDK UpgradeSubscriptionRequest type!
+// UPGRADE Subscription
 subscriptionsRoutes.put(
   '/:id/upgrade',
   validator('param', Schemas.Params.id),

@@ -9,7 +9,6 @@ import type {
 
 const plansRoutes = new Hono();
 
-// Apply error handling middleware
 plansRoutes.use('*', errorHandler.middleware());
 
 // CREATE Payment Plan - Using your exact SDK CreatePaymentPlanRequest type!

@@ -9,10 +9,9 @@ import type {
 
 const productsRoutes = new Hono();
 
-// Apply error handling middleware
 productsRoutes.use('*', errorHandler.middleware());
 
-// CREATE Product - Using your exact SDK CreateProductRequest type!
+// CREATE Product
 productsRoutes.post(
   '/',
   validator('json', Schemas.CreateProduct),
