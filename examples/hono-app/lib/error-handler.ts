@@ -5,28 +5,17 @@ import { Context } from 'hono';
  * Standard error response format
  */
 export interface ErrorResponse {
-  /** Whether the request was successful */
   success: false;
-  /** Error classification */
   error: {
-    /** Error type/category */
     type: string;
-    /** Human-readable error message */
     message: string;
-    /** User-friendly message (safe to show to end users) */
     userMessage?: string;
-    /** Error code from the API */
     code?: string;
-    /** Error group/category from the API */
     group?: string;
-    /** Request ID for tracking */
     requestId?: string;
-    /** Additional error details (only in development) */
     details?: Record<string, unknown>;
   };
-  /** Timestamp when the error occurred */
   timestamp: number;
-  /** Whether this error might be retryable */
   retryable?: boolean;
 }
 
@@ -34,11 +23,8 @@ export interface ErrorResponse {
  * Standard success response format
  */
 export interface SuccessResponse<T = unknown> {
-  /** Whether the request was successful */
   success: true;
-  /** Response data */
   data: T;
-  /** Timestamp when the response was generated */
   timestamp: number;
 }
 
@@ -47,10 +33,6 @@ export interface SuccessResponse<T = unknown> {
  */
 export type ApiResponse<T = unknown> = SuccessResponse<T> | ErrorResponse;
 
-/**
- * Enhanced error handler that properly extracts and formats all error information
- * from Iyzico SDK errors, following best practices from Stripe, Shopify, etc.
- */
 export class IyzicoErrorHandler {
   private readonly isDevelopment: boolean;
 
@@ -58,10 +40,6 @@ export class IyzicoErrorHandler {
     this.isDevelopment = isDevelopment;
   }
 
-  /**
-   * Main error handling method - converts any error to a structured response
-   * Now leverages the enhanced SDK error utilities for consistent handling
-   */
   public handleError(error: unknown): {
     response: ErrorResponse;
     statusCode: number;
@@ -70,7 +48,6 @@ export class IyzicoErrorHandler {
 
     // Use SDK utilities for consistent error handling
     const category = IyzicoErrorUtils.getErrorCategory(error);
-    const severity = IyzicoErrorUtils.getErrorSeverity(error);
     const userMessage = IyzicoErrorUtils.getUserFriendlyMessage(error);
     const isRetryable = IyzicoErrorUtils.isRetryable(error);
 
@@ -185,7 +162,7 @@ export class IyzicoErrorHandler {
       case ErrorCategory.AUTHENTICATION:
       case ErrorCategory.AUTHORIZATION:
       case ErrorCategory.CONFIGURATION:
-        return 500; // Don't expose auth/config issues to client
+        return 500;
       case ErrorCategory.VALIDATION:
         return 400;
       case ErrorCategory.RATE_LIMIT:
@@ -231,7 +208,6 @@ export class IyzicoErrorHandler {
    * Gets detailed error information for development mode
    */
   private getErrorDetails(error: unknown): Record<string, unknown> {
-    // Use SDK's safe formatting to avoid exposing sensitive data
     return IyzicoErrorUtils.formatForLogging(error);
   }
 
