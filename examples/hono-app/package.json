@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "hono": "^4.9.8",
-    "@kaanmertkoc/iyzico-ts": "file:../..",
+    "@kaanmertkoc/iyzico-subs-ts": "file:../..",
     "zod": "^3.22.4",
     "@hono/zod-validator": "^0.2.2"
   },

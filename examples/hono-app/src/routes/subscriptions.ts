@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { iyzico } from '../../lib/iyzico';
 import { validator, Schemas } from '../../lib/validation-utils';
 import { errorHandler, success } from '../../lib/error-handler';
-import type { UpgradeSubscriptionRequest } from '@kaanmertkoc/iyzico-ts';
+import type { UpgradeSubscriptionRequest } from '@kaanmertkoc/iyzico-subs-ts';
 
 const subscriptionsRoutes = new Hono();
 

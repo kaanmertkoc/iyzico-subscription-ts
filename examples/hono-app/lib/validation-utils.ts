@@ -5,7 +5,7 @@ import {
   CurrencyCode,
   PaymentInterval,
   PlanPaymentType,
-} from '@kaanmertkoc/iyzico-ts';
+} from '@kaanmertkoc/iyzico-subs-ts';
 
 /**
  * Standardized validation error handler

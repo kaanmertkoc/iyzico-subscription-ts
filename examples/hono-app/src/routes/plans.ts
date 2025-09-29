@@ -5,7 +5,7 @@ import { errorHandler, success } from '../../lib/error-handler';
 import type {
   CreatePaymentPlanRequest,
   UpdatePaymentPlanRequest,
-} from '@kaanmertkoc/iyzico-ts';
+} from '@kaanmertkoc/iyzico-subs-ts';
 
 const plansRoutes = new Hono();
 

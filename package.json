@@ -1,6 +1,30 @@
 {
-  "name": "@kaanmertkoc/iyzico-ts",
+  "name": "@kaanmertkoc/iyzico-subs-ts",
   "version": "1.0.0",
+  "description": "Modern TypeScript SDK for Iyzico Subscription API - Cross-platform compatible",
+  "author": "Kaan Mert Koç <kaanmertkoc@example.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kaanmertkoc/iyzico-subscription-ts"
+  },
+  "bugs": {
+    "url": "https://github.com/kaanmertkoc/iyzico-subscription-ts/issues"
+  },
+  "homepage": "https://github.com/kaanmertkoc/iyzico-subscription-ts#readme",
+  "keywords": [
+    "iyzico",
+    "subscription",
+    "payment",
+    "typescript",
+    "sdk",
+    "api",
+    "cross-platform",
+    "node",
+    "bun",
+    "deno",
+    "serverless"
+  ],
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
   "types": "dist/types/index.d.ts",
@@ -39,15 +63,15 @@
   "scripts": {
     "test": "vitest",
     "test:coverage": "vitest --coverage",
-    "build": "bun run build:clean && bun run build:esm && bun run build:cjs && bun run build:types",
+    "build": "npm run build:clean && npm run build:esm && npm run build:cjs && npm run build:types",
     "build:clean": "rm -rf dist",
     "build:esm": "tsc -p tsconfig.esm.json",
     "build:cjs": "tsc -p tsconfig.cjs.json",
     "build:types": "tsc -p tsconfig.types.json",
     "typecheck": "tsc --noEmit",
-    "dev": "bun --cwd examples/hono-app run dev",
-    "dev:install": "cd examples/hono-app && bun install",
-    "prepublishOnly": "bun run build"
+    "dev": "npm --prefix examples/hono-app run dev",
+    "dev:install": "cd examples/hono-app && npm install",
+    "prepublishOnly": "npm run build"
   },
   "engines": {
     "node": ">=18.0.0"

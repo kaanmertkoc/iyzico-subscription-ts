@@ -1,8 +1,8 @@
-# @kaanmertkoc/iyzico-ts
+# @kaanmertkoc/iyzico-subs-ts
 
 > Modern TypeScript SDK for Iyzico Subscription API - Cross-platform compatible
 
-[![npm version](https://img.shields.io/npm/v/@kaanmertkoc/iyzico-ts.svg)](https://www.npmjs.com/package/@kaanmertkoc/iyzico-ts)
+[![npm version](https://img.shields.io/npm/v/@kaanmertkoc/iyzico-subs-ts.svg)](https://www.npmjs.com/package/@kaanmertkoc/iyzico-subs-ts)
 [![TypeScript](https://img.shields.io/badge/%3C%2F%3E-TypeScript-%230074c1.svg)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)](https://nodejs.org)
 
@@ -22,19 +22,19 @@ A lightweight, fully-typed, cross-platform SDK for Iyzico's subscription API. **
 ## 📦 Installation
 
 ```bash
-npm install @kaanmertkoc/iyzico-ts
+npm install @kaanmertkoc/iyzico-subs-ts
 # or
-yarn add @kaanmertkoc/iyzico-ts
+yarn add @kaanmertkoc/iyzico-subs-ts
 # or
-bun add @kaanmertkoc/iyzico-ts
+bun add @kaanmertkoc/iyzico-subs-ts
 ```
 
 ## 🔑 Quick Start
 
-### Basic Usage (Node.js/Bun)
+### Basic Usage (Node.js)
 
 ```typescript
-import { IyzicoClient } from '@kaanmertkoc/iyzico-ts';
+import { IyzicoClient } from '@kaanmertkoc/iyzico-subs-ts';
 
 const iyzico = new IyzicoClient({
   apiKey: process.env.IYZICO_API_KEY!,
@@ -170,7 +170,7 @@ The SDK works seamlessly across all modern JavaScript environments:
 ### Next.js API Route
 ```typescript
 // pages/api/subscriptions.ts
-import { IyzicoClient } from '@kaanmertkoc/iyzico-ts';
+import { IyzicoClient } from '@kaanmertkoc/iyzico-subs-ts';
 
 const iyzico = new IyzicoClient({
   apiKey: process.env.IYZICO_API_KEY!,
@@ -186,7 +186,7 @@ export default async function handler(req, res) {
 
 ### Cloudflare Worker
 ```typescript
-import { IyzicoClient } from '@kaanmertkoc/iyzico-ts';
+import { IyzicoClient } from '@kaanmertkoc/iyzico-subs-ts';
 
 export default {
   async fetch(request, env) {
@@ -204,7 +204,7 @@ export default {
 
 ### Vercel Edge Function
 ```typescript
-import { IyzicoClient } from '@kaanmertkoc/iyzico-ts';
+import { IyzicoClient } from '@kaanmertkoc/iyzico-subs-ts';
 
 export const config = { runtime: 'edge' };
 
@@ -225,7 +225,7 @@ export default async function handler(request) {
 The SDK provides structured error handling with user-friendly messages:
 
 ```typescript
-import { IyzicoClient, IyzicoApiError, IyzicoNetworkError } from '@kaanmertkoc/iyzico-ts';
+import { IyzicoClient, IyzicoApiError, IyzicoNetworkError } from '@kaanmertkoc/iyzico-subs-ts';
 
 try {
   const subscription = await iyzico.subscriptions.create(data);
@@ -258,34 +258,34 @@ git clone <your-repo-url>
 cd iyzico-bun-starter
 
 # Install dependencies
-bun install
+npm install
 
 # Build the SDK
-bun run build
+npm run build
 
 # Run tests
-bun test
+npm test
 
 # Start example app
-bun dev
+npm run dev
 ```
 
 ### Testing
 
 ```bash
 # Run all tests
-bun test
+npm test
 
 # Run tests with coverage
-bun run test:coverage
+npm run test:coverage
 
 # Type checking
-bun run typecheck
+npm run typecheck
 ```
 
 ## 📚 Documentation
 
-For detailed usage examples across different platforms, see [CROSS-PLATFORM-USAGE.md](./CROSS-PLATFORM-USAGE.md).
+For detailed usage examples across different platforms, refer to the cross-platform usage examples included in this README.
 
 ## 🔒 Security
 
@@ -296,7 +296,7 @@ For detailed usage examples across different platforms, see [CROSS-PLATFORM-USAG
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please read the development guide in [development-v4.md](./development-v4.md) for detailed information about the project architecture and development workflow.
+Contributions are welcome! Please refer to the codebase for detailed information about the project architecture and development workflow.
 
 ## 📄 License
 

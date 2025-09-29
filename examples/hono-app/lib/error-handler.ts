@@ -1,4 +1,4 @@
-import { ErrorCategory, IyzicoErrorUtils } from '@kaanmertkoc/iyzico-ts';
+import { ErrorCategory, IyzicoErrorUtils } from '@kaanmertkoc/iyzico-subs-ts';
 import { Context } from 'hono';
 
 /**

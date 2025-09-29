@@ -1,4 +1,4 @@
-import { IyzicoClient } from '@kaanmertkoc/iyzico-ts';
+import { IyzicoClient } from '@kaanmertkoc/iyzico-subs-ts';
 
 // Production credentials (required)
 const apiKey = process.env.IYZICO_API_KEY;

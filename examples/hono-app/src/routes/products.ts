@@ -5,7 +5,7 @@ import { errorHandler, success } from '../../lib/error-handler';
 import type {
   CreateProductRequest,
   UpdateProductRequest,
-} from '@kaanmertkoc/iyzico-ts';
+} from '@kaanmertkoc/iyzico-subs-ts';
 
 const productsRoutes = new Hono();
 
