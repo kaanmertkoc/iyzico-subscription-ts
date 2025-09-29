@@ -254,8 +254,8 @@ try {
 
 ```bash
 # Clone the repository
-git clone <your-repo-url>
-cd iyzico-bun-starter
+git clone https://github.com/kaanmertkoc/iyzico-subscription-ts
+cd iyzico-subscription-ts
 
 # Install dependencies
 npm install
