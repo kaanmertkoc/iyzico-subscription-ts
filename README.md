@@ -22,16 +22,20 @@ A lightweight, fully-typed, cross-platform SDK for Iyzico's subscription API. **
 ## 📦 Installation
 
 ```bash
+bun install @kaanmertkoc/iyzico-subs-ts
+# or
 npm install @kaanmertkoc/iyzico-subs-ts
 # or
 yarn add @kaanmertkoc/iyzico-subs-ts
 # or
-bun add @kaanmertkoc/iyzico-subs-ts
+pnpm add @kaanmertkoc/iyzico-subs-ts
+# or
+deno add @kaanmertkoc/iyzico-subs-ts
 ```
 
 ## 🔑 Quick Start
 
-### Basic Usage (Node.js)
+### Basic Usage (Node.js/Bun/Deno)
 
 ```typescript
 import { IyzicoClient } from '@kaanmertkoc/iyzico-subs-ts';
