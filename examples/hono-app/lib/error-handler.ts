@@ -1,29 +1,5 @@
+import { ErrorCategory, IyzicoErrorUtils } from '@kaanmertkoc/iyzico-ts';
 import { Context } from 'hono';
-import {
-  IyzicoError,
-  IyzicoApiError,
-  IyzicoNetworkError,
-  IyzicoConfigError,
-} from '@kaanmertkoc/iyzico-ts';
-
-/**
- * User-friendly error messages for common Iyzico error codes
- * Centralized here for better maintainability
- */
-const USER_FRIENDLY_MESSAGES: Record<string, string> = {
-  INVALID_BIN: 'Invalid card number format',
-  INVALID_CARD: 'Invalid card information',
-  INSUFFICIENT_FUNDS: 'Insufficient funds',
-  EXPIRED_CARD: 'Card has expired',
-  INVALID_CVV: 'Invalid security code',
-  CARD_NOT_ENROLLED: 'Card not enrolled for online payments',
-  AUTHENTICATION_FAILED: 'Authentication failed',
-  LIMIT_EXCEEDED: 'Transaction limit exceeded',
-  FRAUD_SUSPECTED: 'Transaction declined for security reasons',
-  INVALID_MERCHANT: 'Invalid merchant configuration',
-  INVALID_TRANSACTION: 'Invalid transaction',
-  DUPLICATE_TRANSACTION: 'Duplicate transaction detected',
-};
 
 /**
  * Standard error response format
@@ -72,27 +48,6 @@ export interface SuccessResponse<T = unknown> {
 export type ApiResponse<T = unknown> = SuccessResponse<T> | ErrorResponse;
 
 /**
- * Helper function to get user-friendly error message
- */
-function getUserFriendlyMessage(error: IyzicoApiError): string {
-  // Check for specific error codes first
-  if (error.errorCode && USER_FRIENDLY_MESSAGES[error.errorCode]) {
-    return USER_FRIENDLY_MESSAGES[error.errorCode];
-  }
-
-  // Fallback to generic message based on status code
-  if (error.statusCode >= 500) {
-    return 'Service temporarily unavailable. Please try again later.';
-  } else if (error.statusCode === 429) {
-    return 'Too many requests. Please try again in a few moments.';
-  } else if (error.statusCode >= 400) {
-    return error.message || 'Request could not be processed';
-  }
-
-  return 'An unexpected error occurred';
-}
-
-/**
  * Enhanced error handler that properly extracts and formats all error information
  * from Iyzico SDK errors, following best practices from Stripe, Shopify, etc.
  */
@@ -105,6 +60,7 @@ export class IyzicoErrorHandler {
 
   /**
    * Main error handling method - converts any error to a structured response
+   * Now leverages the enhanced SDK error utilities for consistent handling
    */
   public handleError(error: unknown): {
     response: ErrorResponse;
@@ -112,112 +68,48 @@ export class IyzicoErrorHandler {
   } {
     const timestamp = Date.now();
 
-    // Handle Iyzico API errors (400, 500 responses from the API)
-    if (error instanceof IyzicoApiError) {
-      return {
-        response: {
-          success: false,
-          error: {
-            type: 'API_ERROR',
-            message: error.message,
-            userMessage: getUserFriendlyMessage(error),
-            ...(error.errorCode && { code: error.errorCode }),
-            ...(error.errorGroup && { group: error.errorGroup }),
-            ...(error.requestId && { requestId: error.requestId }),
-            ...(this.isDevelopment && {
-              details: {
-                url: error.url,
-                method: error.method,
-                responseData: error.responseData,
-                stack: error.stack,
-              },
-            }),
-          },
-          timestamp,
-          retryable: error.isRetryable(),
-        },
-        statusCode: this.mapStatusCode(error.statusCode),
-      };
-    }
+    // Use SDK utilities for consistent error handling
+    const category = IyzicoErrorUtils.getErrorCategory(error);
+    const severity = IyzicoErrorUtils.getErrorSeverity(error);
+    const userMessage = IyzicoErrorUtils.getUserFriendlyMessage(error);
+    const isRetryable = IyzicoErrorUtils.isRetryable(error);
 
-    // Handle network/timeout errors
-    if (error instanceof IyzicoNetworkError) {
-      return {
-        response: {
-          success: false,
-          error: {
-            type: error.isTimeout ? 'TIMEOUT_ERROR' : 'NETWORK_ERROR',
-            message: error.message,
-            userMessage: error.isTimeout
-              ? 'Request timed out. Please try again.'
-              : 'Network error occurred. Please check your connection and try again.',
-            ...(error.requestId && { requestId: error.requestId }),
-            ...(this.isDevelopment && {
-              details: {
-                cause: error.cause,
-                isTimeout: error.isTimeout,
-                stack: error.stack,
-              },
-            }),
-          },
-          timestamp,
-          retryable: true,
-        },
-        statusCode: error.isTimeout ? 408 : 503,
-      };
-    }
+    // Handle Iyzico SDK errors with enhanced information from SDK
+    if (IyzicoErrorUtils.isIyzicoError(error)) {
+      const statusCode = IyzicoErrorUtils.isApiError(error)
+        ? this.mapStatusCode(error.statusCode)
+        : this.getStatusCodeFromCategory(category);
 
-    // Handle configuration errors
-    if (error instanceof IyzicoConfigError) {
       return {
         response: {
           success: false,
           error: {
-            type: 'CONFIG_ERROR',
+            type: this.getErrorTypeFromCategory(category),
             message: error.message,
-            userMessage: 'Service configuration error. Please contact support.',
+            userMessage,
+            ...(IyzicoErrorUtils.isApiError(error) && {
+              code: error.errorCode,
+              group: error.errorGroup,
+            }),
             ...(error.requestId && { requestId: error.requestId }),
             ...(this.isDevelopment && {
-              details: {
-                configField: error.configField,
-                stack: error.stack,
-              },
+              details: this.getErrorDetails(error),
             }),
           },
           timestamp,
-          retryable: false,
+          retryable: isRetryable,
         },
-        statusCode: 500,
-      };
-    }
-
-    // Handle other Iyzico SDK errors
-    if (error instanceof IyzicoError) {
-      return {
-        response: {
-          success: false,
-          error: {
-            type: 'SDK_ERROR',
-            message: error.message,
-            userMessage: 'An error occurred while processing your request.',
-            ...(error.requestId && { requestId: error.requestId }),
-            ...(this.isDevelopment && {
-              details: {
-                stack: error.stack,
-              },
-            }),
-          },
-          timestamp,
-          retryable: false,
-        },
-        statusCode: 500,
+        statusCode,
       };
     }
 
     // Handle validation errors (from Hono validator)
     if (error && typeof error === 'object' && 'message' in error) {
       const errorObj = error as { message: string; [key: string]: unknown };
-      if (errorObj.message?.includes('validation') || errorObj.message?.includes('Invalid')) {
+      if (
+        errorObj.message?.includes('validation') ||
+        errorObj.message?.includes('Invalid')
+      ) {
         return {
           response: {
             success: false,
@@ -246,8 +138,10 @@ export class IyzicoErrorHandler {
           success: false,
           error: {
             type: 'INTERNAL_ERROR',
-            message: this.isDevelopment ? error.message : 'An unexpected error occurred',
-            userMessage: 'An unexpected error occurred. Please try again later.',
+            message: this.isDevelopment
+              ? error.message
+              : 'An unexpected error occurred',
+            userMessage,
             ...(this.isDevelopment && {
               details: {
                 name: error.name,
@@ -269,7 +163,7 @@ export class IyzicoErrorHandler {
         error: {
           type: 'UNKNOWN_ERROR',
           message: 'An unexpected error occurred',
-          userMessage: 'An unexpected error occurred. Please try again later.',
+          userMessage,
           ...(this.isDevelopment && {
             details: {
               originalError: error,
@@ -281,6 +175,64 @@ export class IyzicoErrorHandler {
       },
       statusCode: 500,
     };
+  }
+
+  /**
+   * Gets appropriate HTTP status code from error category
+   */
+  private getStatusCodeFromCategory(category: ErrorCategory): number {
+    switch (category) {
+      case ErrorCategory.AUTHENTICATION:
+      case ErrorCategory.AUTHORIZATION:
+      case ErrorCategory.CONFIGURATION:
+        return 500; // Don't expose auth/config issues to client
+      case ErrorCategory.VALIDATION:
+        return 400;
+      case ErrorCategory.RATE_LIMIT:
+        return 429;
+      case ErrorCategory.NETWORK:
+        return 503;
+      case ErrorCategory.SERVER:
+        return 500;
+      default:
+        return 500;
+    }
+  }
+
+  /**
+   * Gets error type string from category
+   */
+  private getErrorTypeFromCategory(category: ErrorCategory): string {
+    switch (category) {
+      case ErrorCategory.AUTHENTICATION:
+        return 'AUTH_ERROR';
+      case ErrorCategory.AUTHORIZATION:
+        return 'PERMISSION_ERROR';
+      case ErrorCategory.VALIDATION:
+        return 'VALIDATION_ERROR';
+      case ErrorCategory.PAYMENT:
+        return 'PAYMENT_ERROR';
+      case ErrorCategory.SUBSCRIPTION:
+        return 'SUBSCRIPTION_ERROR';
+      case ErrorCategory.NETWORK:
+        return 'NETWORK_ERROR';
+      case ErrorCategory.CONFIGURATION:
+        return 'CONFIG_ERROR';
+      case ErrorCategory.RATE_LIMIT:
+        return 'RATE_LIMIT_ERROR';
+      case ErrorCategory.SERVER:
+        return 'SERVER_ERROR';
+      default:
+        return 'UNKNOWN_ERROR';
+    }
+  }
+
+  /**
+   * Gets detailed error information for development mode
+   */
+  private getErrorDetails(error: unknown): Record<string, unknown> {
+    // Use SDK's safe formatting to avoid exposing sensitive data
+    return IyzicoErrorUtils.formatForLogging(error);
   }
 
   /**
@@ -316,25 +268,21 @@ export class IyzicoErrorHandler {
    * Hono middleware for automatic error handling
    */
   public middleware() {
-    return async (c: Context, next: () => Promise<void>): Promise<Response | void> => {
+    return async (
+      c: Context,
+      next: () => Promise<void>
+    ): Promise<Response | void> => {
       try {
         await next();
       } catch (error) {
         const { response, statusCode } = this.handleError(error);
 
-        // Log the error for monitoring (but don't expose sensitive details)
-        if (error instanceof IyzicoError) {
-          console.error('Iyzico SDK Error:', {
-            type: error.name,
-            message: error.message,
-            requestId: error.requestId,
-            ...(error instanceof IyzicoApiError && {
-              statusCode: error.statusCode,
-              errorCode: error.errorCode,
-              url: error.url,
-              method: error.method,
-            }),
-          });
+        // Log the error for monitoring using SDK's safe logging utility
+        if (IyzicoErrorUtils.isIyzicoError(error)) {
+          console.error(
+            'Iyzico SDK Error:',
+            IyzicoErrorUtils.formatForLogging(error)
+          );
         } else {
           console.error('Unexpected Error:', error);
         }
@@ -363,7 +311,10 @@ export function withErrorHandler<T extends [Context, ...unknown[]]>(
     } catch (error) {
       const { response, statusCode } = errorHandler.handleError(error);
       const [context] = args; // First argument is guaranteed to be Context
-      return context.json(response, statusCode as Parameters<Context['json']>[1]);
+      return context.json(
+        response,
+        statusCode as Parameters<Context['json']>[1]
+      );
     }
   };
 }

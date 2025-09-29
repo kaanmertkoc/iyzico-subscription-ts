@@ -6,6 +6,11 @@ export {
   IyzicoNetworkError,
   IyzicoConfigError,
   type IyzicoClientOptions,
+  type IyzicoApiErrorResponse,
+  IYZICO_ERROR_MESSAGES,
+  ErrorSeverity,
+  ErrorCategory,
+  IyzicoErrorUtils,
 } from './error';
 
 export * from './types';
