@@ -20,5 +20,6 @@ export { PlansService } from './services/plans';
 export { CheckoutService } from './services/checkout';
 export { SubscriptionsService } from './services/subscriptions';
 export { HealthService } from './services/health';
+export { CustomersService } from './services/customers';
 
 export { generateAuthHeaders } from './auth';

@@ -58,3 +58,8 @@ export type {
 } from './subscriptions';
 
 export type { BinCheckData, BinCheckRequest, BinCheckResponse } from './health';
+
+export type {
+  UpdateCustomerRequest,
+  UpdateCustomerResponse,
+} from './customers';
