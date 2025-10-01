@@ -25,7 +25,7 @@ export class CheckoutService {
       name: params.name,
       surname: params.surname,
       email: params.email,
-      gsmNumber: params.gsmNumber.startsWith('+90')
+      gsmNumber: params.gsmNumber?.startsWith('+90')
         ? params.gsmNumber
         : `+90${params.gsmNumber}`,
       identityNumber: params.identityNumber,

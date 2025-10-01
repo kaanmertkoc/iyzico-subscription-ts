@@ -74,13 +74,13 @@ export interface PricingPlan {
 export interface CreatePaymentPlanRequest extends BaseRequest {
   name: string;
   productReferenceCode: string;
-  recurrenceCount?: number;
   planPaymentType: PlanPaymentType;
-  trialPeriodDays?: number;
   paymentIntervalCount: number;
   paymentInterval: PaymentInterval;
   currencyCode: CurrencyCode;
   price: number;
+  trialPeriodDays?: number;
+  recurrenceCount?: number;
 }
 
 /**

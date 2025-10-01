@@ -36,7 +36,6 @@ export interface IyzicoOptions {
   baseUrl?: string;
 }
 
-
 /**
  * Base request structure with common optional fields
  */
@@ -83,4 +82,17 @@ export interface Address {
   city: string;
   zipCode?: string;
   address: string;
+}
+
+/**
+ * Base customer structure used across Iyzico API
+ */
+export interface BaseCustomer {
+  name: string;
+  surname: string;
+  email: string;
+  billingAddress?: Address;
+  shippingAddress?: Address;
+  gsmNumber?: string;
+  identityNumber?: string;
 }

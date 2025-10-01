@@ -1,4 +1,4 @@
-import type { Address, BaseRequest, BaseResponse } from './core';
+import type { BaseCustomer, BaseRequest, BaseResponse } from './core';
 
 /**
  * Checkout form data returned by the API
@@ -12,17 +12,10 @@ export interface CheckoutFormData {
 /**
  * Request payload for initializing checkout form
  */
-export interface InitializeCheckoutRequest extends BaseRequest {
+export interface InitializeCheckoutRequest extends BaseRequest, BaseCustomer {
   callbackUrl: string;
-  shippingAddress: Address;
-  billingAddress: Address;
-  identityNumber: string;
-  gsmNumber: string;
-  email: string;
-  surname: string;
-  name: string;
-  subscriptionInitialStatus?: 'PENDING' | 'ACTIVE';
   pricingPlanReferenceCode: string;
+  subscriptionInitialStatus?: 'PENDING' | 'ACTIVE';
 }
 
 /**
