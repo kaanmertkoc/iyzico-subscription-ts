@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { type IyzicoClient } from '../src/client';
+import { IYZICO_SANDBOX_BASE_URL, type IyzicoClient } from '../src/client';
 import { IyzicoApiError, IyzicoNetworkError } from '../src/error';
 import { CheckoutService } from '../src/services/checkout';
 import type {
   InitializeCheckoutRequest,
   CheckoutFormResponse,
   CheckoutFormData,
-  BaseResponse,
 } from '../src/types';
+import { BaseCustomer } from '../src/types/core';
 
 // Create a mock client
 const mockClient = {
@@ -50,7 +50,7 @@ describe('CheckoutService', () => {
       const mockCheckoutFormData: CheckoutFormData = {
         checkoutFormContent: '<html>...</html>',
         token: 'checkout_token_abc123',
-        paymentPageUrl: 'https://sandbox-api.iyzipay.com/checkout',
+        paymentPageUrl: IYZICO_SANDBOX_BASE_URL + `/checkout`,
       };
 
       const expectedResponse: CheckoutFormResponse = {
@@ -141,7 +141,7 @@ describe('CheckoutService', () => {
       // Assert
       const [callArgs] = (mockClient.request as ReturnType<typeof vi.fn>).mock
         .calls[0] as [
-        { path: string; method: string; body: Record<string, unknown> },
+        { path: string; method: string; body: Record<string, unknown> }
       ];
       expect((callArgs.body.customer as any).gsmNumber).toBe('+905551234567');
     });
@@ -187,7 +187,7 @@ describe('CheckoutService', () => {
       // Assert
       const [callArgs] = (mockClient.request as ReturnType<typeof vi.fn>).mock
         .calls[0] as [
-        { path: string; method: string; body: Record<string, unknown> },
+        { path: string; method: string; body: Record<string, unknown> }
       ];
       expect((callArgs.body.customer as any).gsmNumber).toBe('+905559876543');
     });
@@ -291,7 +291,7 @@ describe('CheckoutService', () => {
       // Assert
       const [callArgs] = (mockClient.request as ReturnType<typeof vi.fn>).mock
         .calls[0] as [
-        { path: string; method: string; body: Record<string, unknown> },
+        { path: string; method: string; body: Record<string, unknown> }
       ];
       const conversationId = callArgs.body.conversationId as string;
 
@@ -477,13 +477,13 @@ describe('CheckoutService', () => {
       expect(result).toEqual(mockResponse);
       const [callArgs] = (mockClient.request as ReturnType<typeof vi.fn>).mock
         .calls[0] as [
-        { path: string; method: string; body: Record<string, unknown> },
+        { path: string; method: string; body: Record<string, unknown> }
       ];
-      expect((callArgs.body.customer as any).name).toBe('Ömer');
-      expect((callArgs.body.customer as any).surname).toBe('Şahin');
-      expect((callArgs.body.customer as any).billingAddress.city).toBe(
-        'İstanbul'
-      );
+      expect((callArgs.body.customer as BaseCustomer).name).toBe('Ömer');
+      expect((callArgs.body.customer as BaseCustomer).surname).toBe('Şahin');
+      expect(
+        (callArgs.body.customer as BaseCustomer).billingAddress?.city
+      ).toBe('İstanbul');
     });
 
     test('should handle address with zipCode', async () => {
@@ -529,7 +529,7 @@ describe('CheckoutService', () => {
       // Assert
       const [callArgs] = (mockClient.request as ReturnType<typeof vi.fn>).mock
         .calls[0] as [
-        { path: string; method: string; body: Record<string, unknown> },
+        { path: string; method: string; body: Record<string, unknown> }
       ];
       expect((callArgs.body.customer as any).billingAddress.zipCode).toBe(
         '34000'
@@ -550,7 +550,7 @@ describe('CheckoutService', () => {
         paymentPageUrl: 'https://sandbox-api.iyzipay.com/checkout',
       };
 
-      const expectedResponse: BaseResponse<CheckoutFormData> = {
+      const expectedResponse = {
         status: 'success',
         systemTime: 1640995200000,
         data: mockCheckoutFormData,
@@ -577,7 +577,7 @@ describe('CheckoutService', () => {
     test('should generate dynamic conversationId for retrieve', async () => {
       // Arrange
       const token = 'checkout_token_test';
-      const mockResponse: BaseResponse<CheckoutFormData> = {
+      const mockResponse = {
         status: 'success',
         systemTime: 1640995200000,
         data: {
@@ -596,7 +596,7 @@ describe('CheckoutService', () => {
       // Assert
       const [callArgs] = (mockClient.request as ReturnType<typeof vi.fn>).mock
         .calls[0] as [
-        { path: string; method: string; body: Record<string, unknown> },
+        { path: string; method: string; body: Record<string, unknown> }
       ];
       const conversationId = callArgs.body.conversationId as string;
 
@@ -638,11 +638,15 @@ describe('CheckoutService', () => {
     test('should handle expired token error', async () => {
       // Arrange
       const token = 'expired_token_123';
-      const expiredError = new IyzicoApiError('Checkout form token expired', 400, {
-        status: 'failure',
-        errorMessage: 'Checkout form token expired',
-        errorCode: 'TOKEN_EXPIRED',
-      });
+      const expiredError = new IyzicoApiError(
+        'Checkout form token expired',
+        400,
+        {
+          status: 'failure',
+          errorMessage: 'Checkout form token expired',
+          errorCode: 'TOKEN_EXPIRED',
+        }
+      );
       mockClient.request = vi.fn().mockRejectedValue(expiredError);
 
       // Act & Assert
@@ -698,7 +702,7 @@ describe('CheckoutService', () => {
         token: token,
       };
 
-      const expectedResponse: BaseResponse<CheckoutFormData> = {
+      const expectedResponse = {
         status: 'success',
         systemTime: 1640995200000,
         data: mockCheckoutFormData,
@@ -810,11 +814,15 @@ describe('CheckoutService', () => {
           },
         };
 
-        const validationError = new IyzicoApiError('Invalid email format', 400, {
-          status: 'failure',
-          errorMessage: 'Invalid email format',
-          errorCode: 'INVALID_EMAIL',
-        });
+        const validationError = new IyzicoApiError(
+          'Invalid email format',
+          400,
+          {
+            status: 'failure',
+            errorMessage: 'Invalid email format',
+            errorCode: 'INVALID_EMAIL',
+          }
+        );
 
         mockClient.request = vi.fn().mockRejectedValue(validationError);
 
@@ -947,9 +955,9 @@ describe('CheckoutService', () => {
         await checkoutService.initialize(initializeRequest);
 
         // Assert
-        const [callArgs] = (mockClient.request as ReturnType<typeof vi.fn>)
-          .mock.calls[0] as [
-          { path: string; method: string; body: Record<string, unknown> },
+        const [callArgs] = (mockClient.request as ReturnType<typeof vi.fn>).mock
+          .calls[0] as [
+          { path: string; method: string; body: Record<string, unknown> }
         ];
         const customer = callArgs.body.customer as any;
         expect(customer.billingAddress.city).toBe('Istanbul');
@@ -963,11 +971,15 @@ describe('CheckoutService', () => {
       test('should handle malformed token', async () => {
         // Arrange
         const token = 'malformed@#$%^&*()token';
-        const validationError = new IyzicoApiError('Invalid token format', 400, {
-          status: 'failure',
-          errorMessage: 'Invalid token format',
-          errorCode: 'INVALID_TOKEN_FORMAT',
-        });
+        const validationError = new IyzicoApiError(
+          'Invalid token format',
+          400,
+          {
+            status: 'failure',
+            errorMessage: 'Invalid token format',
+            errorCode: 'INVALID_TOKEN_FORMAT',
+          }
+        );
         mockClient.request = vi.fn().mockRejectedValue(validationError);
 
         // Act & Assert
@@ -1150,7 +1162,7 @@ describe('CheckoutService', () => {
         },
       };
 
-      const retrieveResponse: BaseResponse<CheckoutFormData> = {
+      const retrieveResponse = {
         status: 'success',
         systemTime: 1640995200000,
         data: {
@@ -1199,7 +1211,7 @@ describe('CheckoutService', () => {
         .mockResolvedValueOnce(mockResponses[2]);
 
       // Act
-      const results = [];
+      const results: CheckoutFormResponse[] = [];
       for (const token of tokens) {
         const result = await checkoutService.retrieve(token);
         results.push(result);

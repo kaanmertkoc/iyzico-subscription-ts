@@ -302,7 +302,7 @@ describe('AuthManager', () => {
 });
 
 describe('generateAuthHeaders (compatibility)', () => {
-  let authOptions: any;
+  let authOptions: AuthConfig;
   let originalDateNow: typeof Date.now;
   let originalMathRandom: typeof Math.random;
 
