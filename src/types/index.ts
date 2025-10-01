@@ -8,6 +8,7 @@ export type {
   BaseResponse,
   SimpleResponse,
   PaginatedData,
+  BaseCustomer,
 } from './core';
 
 export type {
@@ -19,7 +20,6 @@ export type {
   AuthManagerConfig,
 } from './auth';
 
-export { Status, PaymentInterval, CurrencyCode } from './core';
 
 export type {
   ProductData,
