@@ -31,17 +31,16 @@ export class SubscriptionsService {
 
   /**
    * Retries a failed subscription payment
-   * @param subscriptionReferenceCode - The subscription reference code to retry
+   * @param referenceCode - The reference code of the failed payment
    * @returns Promise resolving to the retry response
    */
-  async retry(
-    subscriptionReferenceCode: string
-  ): Promise<SubscriptionResponse> {
+  async retry(referenceCode: string): Promise<SubscriptionResponse> {
     return this.client.request<SubscriptionResponse>({
-      path: `/v2/subscription/subscriptions/${subscriptionReferenceCode}/retry`,
+      path: '/operation/retry',
       method: 'POST',
       body: {
         conversationId: `subscription-retry-${Date.now()}`,
+        referenceCode,
       },
     });
   }

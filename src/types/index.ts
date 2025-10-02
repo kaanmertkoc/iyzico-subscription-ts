@@ -9,6 +9,8 @@ export type {
   SimpleResponse,
   PaginatedData,
   BaseCustomer,
+  CurrencyCode,
+  PaymentInterval,
 } from './core';
 
 export type {
@@ -19,7 +21,6 @@ export type {
   AuthResult,
   AuthManagerConfig,
 } from './auth';
-
 
 export type {
   ProductData,
@@ -48,7 +49,12 @@ export { PlanPaymentType } from './plans';
 export type {
   CheckoutFormData,
   InitializeCheckoutRequest,
+  InitializeSubscriptionRequest,
   CheckoutFormResponse,
+  InitializeSubscriptionResponse,
+  SubscriptionInitData,
+  PaymentCard,
+  CardUpdateRequest,
 } from './checkout';
 
 export type {

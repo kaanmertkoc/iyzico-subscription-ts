@@ -35,41 +35,55 @@ export const validator = <T extends z.ZodType>(
 ) => zValidator(target, schema, handleValidationError);
 
 /**
+ * Reusable schema components
+ */
+const BaseSchemas = {
+  address: z.object({
+    contactName: z.string().min(1, 'Contact name required'),
+    country: z.string().min(1, 'Country required'),
+    city: z.string().min(1, 'City required'),
+    address: z.string().min(1, 'Address required'),
+    zipCode: z.string().optional(),
+  }),
+
+  baseRequest: z.object({
+    locale: z.string().optional(),
+    conversationId: z.string().optional(),
+  }),
+
+  binNumber: z
+    .string()
+    .min(6, 'BIN must be at least 6 digits')
+    .max(8, 'BIN must be at most 8 digits')
+    .regex(/^\d{6,8}$/, 'Must be 6-8 digits'),
+};
+
+/**
  * Validation schemas - kept minimal and focused on validation rules only
  * The actual types come from your SDK!
  */
 export const Schemas = {
   // Product validation
-  CreateProduct: z.object({
+  CreateProduct: BaseSchemas.baseRequest.extend({
     name: z.string().min(1, 'Product name is required'),
     description: z.string().optional(),
-    locale: z.string().optional(),
-    conversationId: z.string().optional(),
   }),
 
-  UpdateProduct: z.object({
+  UpdateProduct: BaseSchemas.baseRequest.extend({
     productReferenceCode: z
       .string()
       .min(1, 'Product reference code is required'),
     name: z.string().min(1, 'Product name is required'),
     description: z.string().optional(),
-    locale: z.string().optional(),
-    conversationId: z.string().optional(),
   }),
 
   // Health/BIN validation
-  BinCheck: z.object({
-    binNumber: z
-      .string()
-      .min(6, 'BIN must be at least 6 digits')
-      .max(8, 'BIN must be at most 8 digits')
-      .regex(/^\d{6,8}$/, 'Must be 6-8 digits'),
-    locale: z.string().optional(),
-    conversationId: z.string().optional(),
+  BinCheck: BaseSchemas.baseRequest.extend({
+    binNumber: BaseSchemas.binNumber,
   }),
 
   // Payment Plan validation
-  CreatePaymentPlan: z.object({
+  CreatePaymentPlan: BaseSchemas.baseRequest.extend({
     name: z.string().min(1, 'Plan name required'),
     productReferenceCode: z.string().min(1, 'Product reference required'),
     recurrenceCount: z.number().optional(),
@@ -79,8 +93,6 @@ export const Schemas = {
     paymentInterval: z.nativeEnum(PaymentInterval),
     currencyCode: z.nativeEnum(CurrencyCode),
     price: z.number().positive(),
-    locale: z.string().optional(),
-    conversationId: z.string().optional(),
   }),
 
   ListPaymentPlans: z.object({
@@ -106,16 +118,59 @@ export const Schemas = {
   // Route params
   Params: {
     id: z.object({ id: z.string().min(1) }),
+    token: z.object({ token: z.string().min(1) }),
   },
+
+  // Checkout validation
+  InitializeCheckout: BaseSchemas.baseRequest.extend({
+    pricingPlanReferenceCode: z.string().min(1, 'Plan reference required'),
+    callbackUrl: z.string().url(),
+    subscriptionInitialStatus: z.enum(['PENDING', 'ACTIVE']).optional(),
+    name: z.string().min(1, 'Customer name required'),
+    surname: z.string().min(1, 'Customer surname required'),
+    email: z.string().email().min(1, 'Customer email required'),
+    gsmNumber: z.string().optional(),
+    identityNumber: z.string().optional(),
+    billingAddress: BaseSchemas.address.optional(),
+    shippingAddress: BaseSchemas.address.optional(),
+  }),
+
+  // NON-3DS Subscription validation
+  InitializeSubscription: BaseSchemas.baseRequest.extend({
+    pricingPlanReferenceCode: z.string().min(1, 'Plan reference required'),
+    subscriptionInitialStatus: z.enum(['PENDING', 'ACTIVE']).optional(),
+    name: z.string().min(1, 'Customer name required'),
+    surname: z.string().min(1, 'Customer surname required'),
+    email: z.string().email().min(1, 'Customer email required'),
+    gsmNumber: z.string().optional(),
+    identityNumber: z.string().optional(),
+    billingAddress: BaseSchemas.address.optional(),
+    shippingAddress: BaseSchemas.address.optional(),
+    paymentCard: z.object({
+      cardHolderName: z.string().optional(),
+      cardNumber: z.string().optional(),
+      expireYear: z.string().optional(),
+      expireMonth: z.string().optional(),
+      cvc: z.string().optional(),
+      registerConsumerCard: z.boolean().optional(),
+      cardToken: z.string().optional(),
+      consumerToken: z.string().optional(),
+      ucsToken: z.string().optional(),
+    }),
+  }),
+
+  // Card Update validation
+  CardUpdate: BaseSchemas.baseRequest.extend({
+    callbackUrl: z.string().url(),
+    subscriptionReferenceCode: z
+      .string()
+      .min(1, 'Subscription reference required'),
+  }),
 
   // Query params
   Query: {
     bin: z.object({
-      bin: z
-        .string()
-        .min(6, 'BIN must be at least 6 digits')
-        .max(8, 'BIN must be at most 8 digits')
-        .regex(/^\d{6,8}$/, 'Must be 6-8 digits'),
+      bin: BaseSchemas.binNumber,
     }),
   },
 };
