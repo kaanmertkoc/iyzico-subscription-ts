@@ -64,10 +64,12 @@ export interface SubscriptionInitData {
 
 /**
  * Request payload for card update
+ * Either subscriptionReferenceCode OR customerReferenceCode must be provided
  */
 export interface CardUpdateRequest extends BaseRequest {
   callbackUrl: string;
-  subscriptionReferenceCode: string;
+  subscriptionReferenceCode?: string;
+  customerReferenceCode?: string;
 }
 
 /**

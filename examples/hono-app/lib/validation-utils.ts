@@ -121,11 +121,12 @@ export const Schemas = {
     token: z.object({ token: z.string().min(1) }),
   },
 
-  // Checkout validation
+  // Checkout validation (matches API structure with customer object)
   InitializeCheckout: BaseSchemas.baseRequest.extend({
     pricingPlanReferenceCode: z.string().min(1, 'Plan reference required'),
     callbackUrl: z.string().url(),
     subscriptionInitialStatus: z.enum(['PENDING', 'ACTIVE']).optional(),
+    // Customer fields remain flat in the SDK interface for convenience
     name: z.string().min(1, 'Customer name required'),
     surname: z.string().min(1, 'Customer surname required'),
     email: z.string().email().min(1, 'Customer email required'),
@@ -135,10 +136,11 @@ export const Schemas = {
     shippingAddress: BaseSchemas.address.optional(),
   }),
 
-  // NON-3DS Subscription validation
+  // NON-3DS Subscription validation (matches API structure with customer object)
   InitializeSubscription: BaseSchemas.baseRequest.extend({
     pricingPlanReferenceCode: z.string().min(1, 'Plan reference required'),
     subscriptionInitialStatus: z.enum(['PENDING', 'ACTIVE']).optional(),
+    // Customer fields remain flat in the SDK interface for convenience
     name: z.string().min(1, 'Customer name required'),
     surname: z.string().min(1, 'Customer surname required'),
     email: z.string().email().min(1, 'Customer email required'),
@@ -159,13 +161,20 @@ export const Schemas = {
     }),
   }),
 
-  // Card Update validation
-  CardUpdate: BaseSchemas.baseRequest.extend({
-    callbackUrl: z.string().url(),
-    subscriptionReferenceCode: z
-      .string()
-      .min(1, 'Subscription reference required'),
-  }),
+  // Card Update validation (requires either subscriptionReferenceCode or customerReferenceCode)
+  CardUpdate: BaseSchemas.baseRequest
+    .extend({
+      callbackUrl: z.string().url(),
+      subscriptionReferenceCode: z.string().optional(),
+      customerReferenceCode: z.string().optional(),
+    })
+    .refine(
+      (data) => data.subscriptionReferenceCode || data.customerReferenceCode,
+      {
+        message:
+          'Either subscriptionReferenceCode or customerReferenceCode is required',
+      }
+    ),
 
   // Query params
   Query: {

@@ -829,10 +829,15 @@ describe('CheckoutService', () => {
           conversationId: expect.stringMatching(/^subscription-\d+$/),
           pricingPlanReferenceCode: 'PLAN_123',
           subscriptionInitialStatus: 'ACTIVE',
-          name: 'John',
-          surname: 'Doe',
-          email: 'john.doe@example.com',
-          gsmNumber: '+905551234567',
+          customer: expect.objectContaining({
+            name: 'John',
+            surname: 'Doe',
+            email: 'john.doe@example.com',
+            gsmNumber: '+905551234567',
+            identityNumber: '11111111111',
+            billingAddress: expect.any(Object),
+            shippingAddress: expect.any(Object),
+          }),
           paymentCard: expect.objectContaining({
             cardHolderName: 'John Doe',
             cardNumber: '5528790000000008',
@@ -898,6 +903,19 @@ describe('CheckoutService', () => {
         .calls[0] as [
         { path: string; method: string; body: Record<string, unknown> }
       ];
+
+      // Verify customer object is wrapped correctly
+      expect(callArgs.body.customer).toBeDefined();
+      expect((callArgs.body.customer as BaseCustomer).name).toBe('Jane');
+      expect((callArgs.body.customer as BaseCustomer).surname).toBe('Smith');
+      expect((callArgs.body.customer as BaseCustomer).email).toBe(
+        'jane.smith@example.com'
+      );
+      expect((callArgs.body.customer as BaseCustomer).gsmNumber).toBe(
+        '+905559876543'
+      );
+
+      // Verify payment card tokens
       expect((callArgs.body.paymentCard as PaymentCard).cardToken).toBe(
         'card_token_xyz'
       );

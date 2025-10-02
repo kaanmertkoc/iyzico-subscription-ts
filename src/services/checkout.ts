@@ -60,11 +60,8 @@ export class CheckoutService {
   async initializeSubscription(
     params: InitializeSubscriptionRequest
   ): Promise<InitializeSubscriptionResponse> {
-    const requestBody = {
-      locale: params.locale || 'tr',
-      conversationId: params.conversationId || `subscription-${Date.now()}`,
-      pricingPlanReferenceCode: params.pricingPlanReferenceCode,
-      subscriptionInitialStatus: params.subscriptionInitialStatus || 'ACTIVE',
+    // Transform the customer data to match Iyzico's expected format
+    const customer = {
       name: params.name,
       surname: params.surname,
       email: params.email,
@@ -74,6 +71,14 @@ export class CheckoutService {
       identityNumber: params.identityNumber,
       billingAddress: params.billingAddress,
       shippingAddress: params.shippingAddress,
+    };
+
+    const requestBody = {
+      locale: params.locale || 'tr',
+      conversationId: params.conversationId || `subscription-${Date.now()}`,
+      pricingPlanReferenceCode: params.pricingPlanReferenceCode,
+      subscriptionInitialStatus: params.subscriptionInitialStatus || 'ACTIVE',
+      customer,
       paymentCard: params.paymentCard,
     };
 
@@ -102,18 +107,25 @@ export class CheckoutService {
 
   /**
    * Initializes a card update checkout form
-   * @param params - Card update parameters
+   * @param params - Card update parameters (requires either subscriptionReferenceCode or customerReferenceCode)
    * @returns Promise resolving to the card update checkout form data
    */
   async initializeCardUpdate(
     params: CardUpdateRequest
   ): Promise<CheckoutFormResponse> {
-    const requestBody = {
+    const requestBody: Record<string, unknown> = {
       locale: params.locale || 'tr',
       conversationId: params.conversationId || `card-update-${Date.now()}`,
-      subscriptionReferenceCode: params.subscriptionReferenceCode,
       callbackUrl: params.callbackUrl,
     };
+
+    // Add either subscriptionReferenceCode or customerReferenceCode
+    if (params.subscriptionReferenceCode) {
+      requestBody.subscriptionReferenceCode = params.subscriptionReferenceCode;
+    }
+    if (params.customerReferenceCode) {
+      requestBody.customerReferenceCode = params.customerReferenceCode;
+    }
 
     return this.client.request<CheckoutFormResponse>({
       path: '/v2/subscription/card-update/checkoutform/initialize',
