@@ -1,6 +1,8 @@
 // Re-export all types from domain-specific modules
 // This provides a clean, single import point while maintaining organization
 
+export { CurrencyCode, PaymentInterval } from './core';
+
 export type {
   IyzicoOptions,
   Address,
@@ -9,8 +11,6 @@ export type {
   SimpleResponse,
   PaginatedData,
   BaseCustomer,
-  CurrencyCode,
-  PaymentInterval,
 } from './core';
 
 export type {

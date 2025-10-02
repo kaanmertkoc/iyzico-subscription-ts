@@ -6,7 +6,7 @@ import type { BaseCustomer, BaseRequest, BaseResponse } from './core';
 export interface CheckoutFormData {
   checkoutFormContent: string;
   token: string;
-  tokenExpireTime: number;
+  tokenExpireTime?: number;
   paymentPageUrl?: string;
 }
 

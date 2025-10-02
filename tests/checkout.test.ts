@@ -4,10 +4,15 @@ import { IyzicoApiError, IyzicoNetworkError } from '../src/error';
 import { CheckoutService } from '../src/services/checkout';
 import type {
   InitializeCheckoutRequest,
+  InitializeSubscriptionRequest,
+  CardUpdateRequest,
   CheckoutFormResponse,
   CheckoutFormData,
+  InitializeSubscriptionResponse,
+  SubscriptionInitData,
+  PaymentCard,
 } from '../src/types';
-import { BaseCustomer } from '../src/types/core';
+import { BaseCustomer, type BaseResponse } from '../src/types/core';
 
 // Create a mock client
 const mockClient = {
@@ -143,7 +148,9 @@ describe('CheckoutService', () => {
         .calls[0] as [
         { path: string; method: string; body: Record<string, unknown> }
       ];
-      expect((callArgs.body.customer as any).gsmNumber).toBe('+905551234567');
+      expect((callArgs.body.customer as BaseCustomer).gsmNumber).toBe(
+        '+905551234567'
+      );
     });
 
     test('should not modify gsm number if it already starts with +90', async () => {
@@ -189,7 +196,9 @@ describe('CheckoutService', () => {
         .calls[0] as [
         { path: string; method: string; body: Record<string, unknown> }
       ];
-      expect((callArgs.body.customer as any).gsmNumber).toBe('+905559876543');
+      expect((callArgs.body.customer as BaseCustomer).gsmNumber).toBe(
+        '+905559876543'
+      );
     });
 
     test('should merge default parameters with provided parameters', async () => {
@@ -531,12 +540,12 @@ describe('CheckoutService', () => {
         .calls[0] as [
         { path: string; method: string; body: Record<string, unknown> }
       ];
-      expect((callArgs.body.customer as any).billingAddress.zipCode).toBe(
-        '34000'
-      );
-      expect((callArgs.body.customer as any).shippingAddress.zipCode).toBe(
-        '34001'
-      );
+      expect(
+        (callArgs.body.customer as BaseCustomer).billingAddress?.zipCode
+      ).toBe('34000');
+      expect(
+        (callArgs.body.customer as BaseCustomer).shippingAddress?.zipCode
+      ).toBe('34001');
     });
   });
 
@@ -694,18 +703,23 @@ describe('CheckoutService', () => {
       );
     });
 
-    test('should retrieve checkout form without paymentPageUrl', async () => {
+    test('should retrieve checkout form result with subscription data', async () => {
       // Arrange
-      const token = 'token_without_url';
-      const mockCheckoutFormData: CheckoutFormData = {
-        checkoutFormContent: '<html>...</html>',
-        token: token,
+      const token = 'token_subscription_data';
+      const mockSubscriptionData: SubscriptionInitData = {
+        referenceCode: 'sub_123',
+        parentReferenceCode: 'parent_123',
+        pricingPlanReferenceCode: 'PLAN_123',
+        customerReferenceCode: 'customer_123',
+        subscriptionStatus: 'ACTIVE',
+        createdDate: 1640995200000,
+        startDate: 1640995200000,
       };
 
       const expectedResponse = {
         status: 'success',
         systemTime: 1640995200000,
-        data: mockCheckoutFormData,
+        data: mockSubscriptionData,
       };
 
       mockClient.request = vi.fn().mockResolvedValue(expectedResponse);
@@ -714,8 +728,8 @@ describe('CheckoutService', () => {
       const result = await checkoutService.retrieve(token);
 
       // Assert
-      expect(result.data?.paymentPageUrl).toBeUndefined();
-      expect(result.data?.token).toBe(token);
+      expect(result.data?.referenceCode).toBe('sub_123');
+      expect(result.data?.subscriptionStatus).toBe('ACTIVE');
     });
 
     test('should handle server errors during retrieval (5xx)', async () => {
@@ -742,6 +756,311 @@ describe('CheckoutService', () => {
           expect(error.isRetryable()).toBe(true);
         }
       }
+    });
+  });
+
+  describe('initializeSubscription', () => {
+    test('should initialize subscription via NON-3DS with payment card', async () => {
+      // Arrange
+      const subscriptionRequest: InitializeSubscriptionRequest = {
+        name: 'John',
+        surname: 'Doe',
+        email: 'john.doe@example.com',
+        gsmNumber: '5551234567',
+        identityNumber: '11111111111',
+        pricingPlanReferenceCode: 'PLAN_123',
+        billingAddress: {
+          contactName: 'John Doe',
+          country: 'Turkey',
+          city: 'Istanbul',
+          address: 'Test Address 123',
+        },
+        shippingAddress: {
+          contactName: 'John Doe',
+          country: 'Turkey',
+          city: 'Istanbul',
+          address: 'Test Address 123',
+        },
+        paymentCard: {
+          cardHolderName: 'John Doe',
+          cardNumber: '5528790000000008',
+          expireYear: '2030',
+          expireMonth: '12',
+          cvc: '123',
+          registerConsumerCard: true,
+        },
+      };
+
+      const mockSubscriptionData: SubscriptionInitData = {
+        referenceCode: 'sub_abc123',
+        parentReferenceCode: 'parent_abc123',
+        pricingPlanReferenceCode: 'PLAN_123',
+        customerReferenceCode: 'customer_xyz789',
+        subscriptionStatus: 'ACTIVE',
+        trialDays: 30,
+        trialStartDate: 1640995200000,
+        trialEndDate: 1643587200000,
+        createdDate: 1640995200000,
+        startDate: 1640995200000,
+        endDate: 1672531200000,
+      };
+
+      const expectedResponse: InitializeSubscriptionResponse = {
+        status: 'success',
+        systemTime: 1640995200000,
+        data: mockSubscriptionData,
+      };
+
+      mockClient.request = vi.fn().mockResolvedValue(expectedResponse);
+
+      // Act
+      const result = await checkoutService.initializeSubscription(
+        subscriptionRequest
+      );
+
+      // Assert
+      expect(result).toEqual(expectedResponse);
+      expect(mockClient.request).toHaveBeenCalledOnce();
+      expect(mockClient.request).toHaveBeenCalledWith({
+        path: '/v2/subscription/initialize',
+        method: 'POST',
+        body: expect.objectContaining({
+          locale: 'tr',
+          conversationId: expect.stringMatching(/^subscription-\d+$/),
+          pricingPlanReferenceCode: 'PLAN_123',
+          subscriptionInitialStatus: 'ACTIVE',
+          name: 'John',
+          surname: 'Doe',
+          email: 'john.doe@example.com',
+          gsmNumber: '+905551234567',
+          paymentCard: expect.objectContaining({
+            cardHolderName: 'John Doe',
+            cardNumber: '5528790000000008',
+            registerConsumerCard: true,
+          }),
+        }),
+      });
+    });
+
+    test('should initialize subscription with stored card tokens', async () => {
+      // Arrange
+      const subscriptionRequest: InitializeSubscriptionRequest = {
+        name: 'Jane',
+        surname: 'Smith',
+        email: 'jane.smith@example.com',
+        gsmNumber: '+905559876543',
+        identityNumber: '22222222222',
+        pricingPlanReferenceCode: 'PLAN_456',
+        subscriptionInitialStatus: 'PENDING',
+        billingAddress: {
+          contactName: 'Jane Smith',
+          country: 'Turkey',
+          city: 'Ankara',
+          address: 'Test Address 456',
+        },
+        shippingAddress: {
+          contactName: 'Jane Smith',
+          country: 'Turkey',
+          city: 'Ankara',
+          address: 'Test Address 456',
+        },
+        paymentCard: {
+          cardToken: 'card_token_xyz',
+          consumerToken: 'consumer_token_abc',
+          ucsToken: 'ucs_token_def',
+        },
+      };
+
+      const mockResponse: InitializeSubscriptionResponse = {
+        status: 'success',
+        systemTime: 1640995200000,
+        data: {
+          referenceCode: 'sub_stored_card',
+          parentReferenceCode: 'parent_stored',
+          pricingPlanReferenceCode: 'PLAN_456',
+          customerReferenceCode: 'customer_stored',
+          subscriptionStatus: 'PENDING',
+          createdDate: 1640995200000,
+          startDate: 1640995200000,
+        },
+      };
+
+      mockClient.request = vi.fn().mockResolvedValue(mockResponse);
+
+      // Act
+      const result = await checkoutService.initializeSubscription(
+        subscriptionRequest
+      );
+
+      // Assert
+      expect(result.data?.subscriptionStatus).toBe('PENDING');
+      const [callArgs] = (mockClient.request as ReturnType<typeof vi.fn>).mock
+        .calls[0] as [
+        { path: string; method: string; body: Record<string, unknown> }
+      ];
+      expect((callArgs.body.paymentCard as PaymentCard).cardToken).toBe(
+        'card_token_xyz'
+      );
+      expect((callArgs.body.paymentCard as PaymentCard).consumerToken).toBe(
+        'consumer_token_abc'
+      );
+      expect((callArgs.body.paymentCard as PaymentCard).ucsToken).toBe(
+        'ucs_token_def'
+      );
+    });
+
+    test('should handle subscription initialization errors', async () => {
+      // Arrange
+      const subscriptionRequest: InitializeSubscriptionRequest = {
+        name: 'Error',
+        surname: 'Test',
+        email: 'error@test.com',
+        pricingPlanReferenceCode: 'INVALID_PLAN',
+        billingAddress: {
+          contactName: 'Error Test',
+          country: 'Turkey',
+          city: 'Istanbul',
+          address: 'Test',
+        },
+        shippingAddress: {
+          contactName: 'Error Test',
+          country: 'Turkey',
+          city: 'Istanbul',
+          address: 'Test',
+        },
+        paymentCard: {
+          cardNumber: '0000000000000000',
+          expireMonth: '01',
+          expireYear: '2020',
+          cvc: '000',
+        },
+      };
+
+      const apiError = new IyzicoApiError('Invalid card or expired', 400, {
+        status: 'failure',
+        errorMessage: 'Invalid card or expired',
+        errorCode: 'INVALID_CARD',
+      });
+      mockClient.request = vi.fn().mockRejectedValue(apiError);
+
+      // Act & Assert
+      await expect(
+        checkoutService.initializeSubscription(subscriptionRequest)
+      ).rejects.toThrow(IyzicoApiError);
+    });
+  });
+
+  describe('initializeCardUpdate', () => {
+    test('should initialize card update checkout form', async () => {
+      // Arrange
+      const cardUpdateRequest: CardUpdateRequest = {
+        subscriptionReferenceCode: 'sub_abc123',
+        callbackUrl: 'https://example.com/card-update-callback',
+      };
+
+      const mockResponse: CheckoutFormResponse = {
+        status: 'success',
+        systemTime: 1640995200000,
+        checkoutFormContent: '<script>...</script>',
+        token: 'card_update_token_xyz',
+        tokenExpireTime: 1800,
+      };
+
+      mockClient.request = vi.fn().mockResolvedValue(mockResponse);
+
+      // Act
+      const result = await checkoutService.initializeCardUpdate(
+        cardUpdateRequest
+      );
+
+      // Assert
+      expect(result).toEqual(mockResponse);
+      expect(mockClient.request).toHaveBeenCalledOnce();
+      expect(mockClient.request).toHaveBeenCalledWith({
+        path: '/v2/subscription/card-update/checkoutform/initialize',
+        method: 'POST',
+        body: {
+          locale: 'tr',
+          conversationId: expect.stringMatching(/^card-update-\d+$/),
+          subscriptionReferenceCode: 'sub_abc123',
+          callbackUrl: 'https://example.com/card-update-callback',
+        },
+      });
+    });
+
+    test('should handle custom locale and conversationId for card update', async () => {
+      // Arrange
+      const cardUpdateRequest: CardUpdateRequest = {
+        subscriptionReferenceCode: 'sub_custom',
+        callbackUrl: 'https://example.com/callback',
+        locale: 'en',
+        conversationId: 'custom-card-update-id',
+      };
+
+      const mockResponse: CheckoutFormResponse = {
+        status: 'success',
+        systemTime: 1640995200000,
+        token: 'card_update_custom',
+        tokenExpireTime: 1800,
+      };
+
+      mockClient.request = vi.fn().mockResolvedValue(mockResponse);
+
+      // Act
+      await checkoutService.initializeCardUpdate(cardUpdateRequest);
+
+      // Assert
+      expect(mockClient.request).toHaveBeenCalledWith({
+        path: '/v2/subscription/card-update/checkoutform/initialize',
+        method: 'POST',
+        body: {
+          locale: 'en',
+          conversationId: 'custom-card-update-id',
+          subscriptionReferenceCode: 'sub_custom',
+          callbackUrl: 'https://example.com/callback',
+        },
+      });
+    });
+
+    test('should handle card update errors', async () => {
+      // Arrange
+      const cardUpdateRequest: CardUpdateRequest = {
+        subscriptionReferenceCode: 'invalid_sub',
+        callbackUrl: 'https://example.com/callback',
+      };
+
+      const apiError = new IyzicoApiError('Subscription not found', 404, {
+        status: 'failure',
+        errorMessage: 'Subscription not found',
+        errorCode: 'SUBSCRIPTION_NOT_FOUND',
+      });
+      mockClient.request = vi.fn().mockRejectedValue(apiError);
+
+      // Act & Assert
+      await expect(
+        checkoutService.initializeCardUpdate(cardUpdateRequest)
+      ).rejects.toThrow(IyzicoApiError);
+      expect(mockClient.request).toHaveBeenCalledOnce();
+    });
+
+    test('should handle invalid callback URL for card update', async () => {
+      // Arrange
+      const cardUpdateRequest: CardUpdateRequest = {
+        subscriptionReferenceCode: 'sub_123',
+        callbackUrl: 'not-a-valid-url',
+      };
+
+      const validationError = new IyzicoApiError('Invalid callback URL', 400, {
+        status: 'failure',
+        errorMessage: 'Invalid callback URL',
+        errorCode: 'INVALID_CALLBACK_URL',
+      });
+      mockClient.request = vi.fn().mockRejectedValue(validationError);
+
+      // Act & Assert
+      await expect(
+        checkoutService.initializeCardUpdate(cardUpdateRequest)
+      ).rejects.toThrow('Invalid callback URL');
     });
   });
 
@@ -959,11 +1278,11 @@ describe('CheckoutService', () => {
           .calls[0] as [
           { path: string; method: string; body: Record<string, unknown> }
         ];
-        const customer = callArgs.body.customer as any;
-        expect(customer.billingAddress.city).toBe('Istanbul');
-        expect(customer.shippingAddress.city).toBe('Ankara');
-        expect(customer.billingAddress.contactName).toBe('Billing Contact');
-        expect(customer.shippingAddress.contactName).toBe('Shipping Contact');
+        const customer = callArgs.body.customer as BaseCustomer;
+        expect(customer.billingAddress?.city).toBe('Istanbul');
+        expect(customer.shippingAddress?.city).toBe('Ankara');
+        expect(customer.billingAddress?.contactName).toBe('Billing Contact');
+        expect(customer.shippingAddress?.contactName).toBe('Shipping Contact');
       });
     });
 
@@ -1166,9 +1485,13 @@ describe('CheckoutService', () => {
         status: 'success',
         systemTime: 1640995200000,
         data: {
-          checkoutFormContent: '<html>...</html>',
-          token: 'checkout_token_chain',
-          paymentPageUrl: 'https://sandbox-api.iyzipay.com/checkout',
+          referenceCode: 'sub_chain_123',
+          parentReferenceCode: 'parent_chain_123',
+          pricingPlanReferenceCode: 'PLAN_CHAIN',
+          customerReferenceCode: 'customer_chain_123',
+          subscriptionStatus: 'ACTIVE',
+          createdDate: 1640995200000,
+          startDate: 1640995200000,
         },
       };
 
@@ -1185,22 +1508,25 @@ describe('CheckoutService', () => {
 
       // Assert
       expect(initResult.data?.token).toBe('checkout_token_chain');
-      expect(retrieveResult.data?.token).toBe('checkout_token_chain');
-      expect(retrieveResult.data?.paymentPageUrl).toBe(
-        'https://sandbox-api.iyzipay.com/checkout'
-      );
+      expect(retrieveResult.data?.referenceCode).toBe('sub_chain_123');
+      expect(retrieveResult.data?.subscriptionStatus).toBe('ACTIVE');
       expect(mockClient.request).toHaveBeenCalledTimes(2);
     });
 
     test('should handle sequential operations', async () => {
       // Arrange
       const tokens = ['token_1', 'token_2', 'token_3'];
-      const mockResponses = tokens.map((token) => ({
+      const mockResponses = tokens.map((token, index) => ({
         status: 'success',
         systemTime: 1640995200000,
         data: {
-          checkoutFormContent: '<html>...</html>',
-          token: token,
+          referenceCode: `sub_${index + 1}`,
+          parentReferenceCode: `parent_${index + 1}`,
+          pricingPlanReferenceCode: `PLAN_${index + 1}`,
+          customerReferenceCode: `customer_${index + 1}`,
+          subscriptionStatus: 'ACTIVE',
+          createdDate: 1640995200000,
+          startDate: 1640995200000,
         },
       }));
 
@@ -1211,7 +1537,7 @@ describe('CheckoutService', () => {
         .mockResolvedValueOnce(mockResponses[2]);
 
       // Act
-      const results: CheckoutFormResponse[] = [];
+      const results: BaseResponse<SubscriptionInitData>[] = [];
       for (const token of tokens) {
         const result = await checkoutService.retrieve(token);
         results.push(result);
@@ -1221,7 +1547,7 @@ describe('CheckoutService', () => {
       expect(results).toHaveLength(3);
       expect(mockClient.request).toHaveBeenCalledTimes(3);
       results.forEach((result, index) => {
-        expect(result.data?.token).toBe(tokens[index]);
+        expect(result.data?.referenceCode).toBe(`sub_${index + 1}`);
       });
     });
   });
