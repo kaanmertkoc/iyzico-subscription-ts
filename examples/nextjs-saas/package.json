@@ -1,0 +1,60 @@
+{
+  "name": "iyzico-nextjs-saas",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Full-stack Next.js SaaS starter with Iyzico subscription payments",
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:setup": "tsx lib/db/setup.ts",
+    "db:seed": "tsx lib/db/seed.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f postgres",
+    "setup": "npm run docker:up && sleep 3 && npm run db:setup && npm run db:migrate && npm run db:seed",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@kaanmertkoc/iyzico-subs-ts": "file:../..",
+    "next": "15.4.0-canary.47",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "@tailwindcss/postcss": "4.1.7",
+    "tailwindcss": "4.1.7",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.3",
+    "drizzle-orm": "^0.43.1",
+    "drizzle-kit": "^0.31.1",
+    "postgres": "^3.4.5",
+    "dotenv": "^16.5.0",
+    "zod": "^3.24.4",
+    "bcryptjs": "^3.0.2",
+    "@types/bcryptjs": "^2.4.6",
+    "jose": "^6.0.11",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.3.0",
+    "class-variance-authority": "^0.7.1",
+    "lucide-react": "^0.511.0",
+    "radix-ui": "^1.4.2",
+    "swr": "^2.3.3",
+    "server-only": "^0.0.1",
+    "tw-animate-css": "^1.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.18",
+    "@types/react": "19.1.4",
+    "@types/react-dom": "19.1.5",
+    "typescript": "^5.8.3",
+    "tsx": "^4.19.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "15.4.0-canary.47"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
