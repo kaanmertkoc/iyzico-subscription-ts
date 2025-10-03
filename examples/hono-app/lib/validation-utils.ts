@@ -97,8 +97,19 @@ export const Schemas = {
 
   ListPaymentPlans: z.object({
     productReferenceCode: z.string().min(1, 'Product reference required'),
-    page: z.coerce.number().int().min(1, 'Page must be at least 1').optional().default(1),
-    count: z.coerce.number().int().min(1, 'Count must be at least 1').max(100, 'Count cannot exceed 100').optional().default(10),
+    page: z.coerce
+      .number()
+      .int()
+      .min(1, 'Page must be at least 1')
+      .optional()
+      .default(1),
+    count: z.coerce
+      .number()
+      .int()
+      .min(1, 'Count must be at least 1')
+      .max(100, 'Count cannot exceed 100')
+      .optional()
+      .default(10),
   }),
 
   UpdatePaymentPlan: z.object({
@@ -126,7 +137,6 @@ export const Schemas = {
     pricingPlanReferenceCode: z.string().min(1, 'Plan reference required'),
     callbackUrl: z.string().url(),
     subscriptionInitialStatus: z.enum(['PENDING', 'ACTIVE']).optional(),
-    // Customer fields remain flat in the SDK interface for convenience
     name: z.string().min(1, 'Customer name required'),
     surname: z.string().min(1, 'Customer surname required'),
     email: z.string().email().min(1, 'Customer email required'),
@@ -140,7 +150,6 @@ export const Schemas = {
   InitializeSubscription: BaseSchemas.baseRequest.extend({
     pricingPlanReferenceCode: z.string().min(1, 'Plan reference required'),
     subscriptionInitialStatus: z.enum(['PENDING', 'ACTIVE']).optional(),
-    // Customer fields remain flat in the SDK interface for convenience
     name: z.string().min(1, 'Customer name required'),
     surname: z.string().min(1, 'Customer surname required'),
     email: z.string().email().min(1, 'Customer email required'),
