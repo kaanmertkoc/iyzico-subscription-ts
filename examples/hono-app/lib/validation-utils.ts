@@ -97,8 +97,8 @@ export const Schemas = {
 
   ListPaymentPlans: z.object({
     productReferenceCode: z.string().min(1, 'Product reference required'),
-    page: z.coerce.number().optional().default(1),
-    count: z.coerce.number().optional().default(10),
+    page: z.coerce.number().int().min(1, 'Page must be at least 1').optional().default(1),
+    count: z.coerce.number().int().min(1, 'Count must be at least 1').max(100, 'Count cannot exceed 100').optional().default(10),
   }),
 
   UpdatePaymentPlan: z.object({
