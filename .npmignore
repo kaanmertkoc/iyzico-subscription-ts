@@ -1,0 +1,36 @@
+# Development files
+examples/
+tests/
+coverage/
+*.test.ts
+*.spec.ts
+
+# Development docs
+development-v3.md
+development-v4.md
+WARP.md
+CONTRIBUTING.md
+
+# Config files
+tsconfig.*.json
+vitest.config.ts
+.github/
+
+# IDE
+.vscode/
+.idea/
+
+# Misc
+*.log
+.DS_Store
+.env*
+!.env.example
+
+# Source files (we ship dist/ only)
+src/
+
+# Lock files
+bun.lock
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

@@ -29,6 +29,9 @@
   "module": "dist/esm/index.js",
   "types": "dist/types/index.d.ts",
   "private": false,
+  "workspaces": [
+    "examples/*"
+  ],
   "exports": {
     "types": "./dist/types/index.d.ts",
     "browser": {
