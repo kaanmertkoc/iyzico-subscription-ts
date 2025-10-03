@@ -219,6 +219,10 @@ export class IyzicoClient {
       );
     }
 
+    // Extract path without query parameters for authentication signature
+    // According to Iyzico docs, HMAC signature should only include the URI path, not query string
+    const pathWithoutQuery = path.split('?')[0];
+    
     // Generate authentication headers using AuthManager
     const authResult = this.authManager.generateAuthHeaders({
       apiKey: this.options.isSandbox
@@ -227,7 +231,7 @@ export class IyzicoClient {
       secretKey: this.options.isSandbox
         ? this.options.sandboxSecretKey!
         : this.options.secretKey,
-      path,
+      path: pathWithoutQuery,
       body: requestBodyString,
     });
 
