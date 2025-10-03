@@ -192,19 +192,47 @@ npm run start
 
 ### Deploy to Docker
 
+A Dockerfile is included in this example:
+
 ```bash
-# Create Dockerfile
-FROM oven/bun:latest
-WORKDIR /app
-COPY . .
-RUN bun install
-CMD ["bun", "run", "start"]
+# Build the image
+docker build -t hono-iyzico-api .
+
+# Run the container
+docker run -d \
+  -p 3000:3000 \
+  -e IYZICO_API_KEY=your_key \
+  -e IYZICO_SECRET_KEY=your_secret \
+  -e IYZICO_IS_SANDBOX=true \
+  --name iyzico-api \
+  hono-iyzico-api
+
+# Check logs
+docker logs -f iyzico-api
+
+# Check health
+curl http://localhost:3000/health
+```
+
+Or use docker-compose:
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+services:
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - IYZICO_API_KEY=${IYZICO_API_KEY}
+      - IYZICO_SECRET_KEY=${IYZICO_SECRET_KEY}
+      - IYZICO_IS_SANDBOX=true
+    restart: unless-stopped
 ```
 
 ```bash
-# Build and run
-docker build -t hono-iyzico .
-docker run -p 3000:3000 --env-file .env.local hono-iyzico
+docker-compose up -d
 ```
 
 ## 🔐 Environment Variables
