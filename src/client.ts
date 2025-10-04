@@ -12,6 +12,8 @@ import {
   IyzicoNetworkError,
   IyzicoError,
   IyzicoApiErrorResponse,
+  IyzicoSandboxLimitationError,
+  isSandboxLimitationError,
 } from './error';
 
 export const IYZICO_BASE_URL = 'https://api.iyzipay.com';
@@ -80,6 +82,13 @@ export class IyzicoClient {
 
   /** Service for health checks and utilities */
   public readonly health: HealthService;
+
+  /**
+   * Check if client is configured for sandbox environment
+   */
+  public get isSandbox(): boolean {
+    return this.options.isSandbox;
+  }
 
   constructor(options: IyzicoClientOptions) {
     // Validate required options
@@ -158,6 +167,17 @@ export class IyzicoClient {
       throw new IyzicoConfigError(
         'maxRetries must be between 0 and 10.',
         'maxRetries'
+      );
+    }
+
+    // Warn about sandbox limitations
+    if (this.options.isSandbox) {
+      console.warn(
+        '\n⚠️  Iyzico Sandbox Limitation Notice:\n' +
+          '   Subscription routes (/v2/subscription/*) are NOT available in sandbox.\n' +
+          '   Only health check endpoints work in sandbox.\n' +
+          '   Use production credentials to test subscription features.\n' +
+          '   See: https://github.com/kaanmertkoc/iyzico-subscription-ts#sandbox-limitations\n'
       );
     }
 
@@ -348,7 +368,7 @@ export class IyzicoClient {
             ? (responseData as IyzicoApiErrorResponse)
             : {};
 
-        throw new IyzicoApiError(
+        const apiError = new IyzicoApiError(
           errorData?.errorMessage ||
             errorData?.message ||
             `HTTP ${response.status}`,
@@ -360,6 +380,13 @@ export class IyzicoClient {
             method,
           }
         );
+
+        // Check if this is a sandbox limitation error
+        if (isSandboxLimitationError(apiError, this.options.isSandbox, path)) {
+          throw new IyzicoSandboxLimitationError(path, requestId);
+        }
+
+        throw apiError;
       }
 
       return responseData as T;

@@ -4,6 +4,8 @@ import {
   IyzicoApiError,
   IyzicoNetworkError,
   IyzicoConfigError,
+  IyzicoSandboxLimitationError,
+  isSandboxLimitationError,
   IyzicoErrorUtils,
   IYZICO_ERROR_MESSAGES,
   ErrorSeverity,
@@ -385,6 +387,223 @@ describe('IyzicoNetworkError', () => {
         message: 'Network failed',
       },
     });
+  });
+});
+
+describe('IyzicoSandboxLimitationError', () => {
+  test('should create sandbox limitation error', () => {
+    const error = new IyzicoSandboxLimitationError(
+      '/v2/subscription/products',
+      'req_12345'
+    );
+
+    expect(error.name).toBe('IyzicoSandboxLimitationError');
+    expect(error.message).toBe('Sandbox environment does not support: /v2/subscription/products');
+    expect(error.statusCode).toBe(422);
+    expect(error.errorCode).toBe('100001');
+    expect(error.errorGroup).toBe('SANDBOX_LIMITATION');
+    expect(error.requestId).toBe('req_12345');
+  });
+
+  test('should return helpful user-friendly message', () => {
+    const error = new IyzicoSandboxLimitationError('/v2/subscription/products');
+    const message = error.getUserFriendlyMessage();
+    
+    expect(message).toContain('sandbox does not support subscription routes');
+    expect(message).toContain('production credentials');
+    expect(message).toContain('health check');
+  });
+
+  test('should categorize as configuration error', () => {
+    const error = new IyzicoSandboxLimitationError('/v2/subscription/products');
+    expect(error.getCategory()).toBe(ErrorCategory.CONFIGURATION);
+  });
+
+  test('should not be retryable', () => {
+    const error = new IyzicoSandboxLimitationError('/v2/subscription/products');
+    expect(error.isRetryable()).toBe(false);
+  });
+
+  test('should include path in response data', () => {
+    const error = new IyzicoSandboxLimitationError('/v2/subscription/plans');
+    expect(error.url).toBe('/v2/subscription/plans');
+  });
+
+  test('should expose affectedRoute property', () => {
+    const error = new IyzicoSandboxLimitationError('/v2/subscription/products');
+    expect(error.affectedRoute).toBe('/v2/subscription/products');
+  });
+
+  test('should provide actionable suggestion', () => {
+    const error = new IyzicoSandboxLimitationError('/v2/subscription/products');
+    const suggestion = error.getSuggestion();
+    
+    expect(suggestion).toContain('production credentials');
+    expect(suggestion).toContain('isSandbox: false');
+    expect(suggestion).toContain('https://github.com');
+  });
+
+  test('should include documentation link in user-friendly message', () => {
+    const error = new IyzicoSandboxLimitationError('/v2/subscription/products');
+    const message = error.getUserFriendlyMessage();
+    
+    expect(message).toContain('https://github.com/kaanmertkoc/iyzico-subscription-ts');
+  });
+});
+
+describe('isSandboxLimitationError helper', () => {
+  test('should detect sandbox limitation error with 422 and error code 100001', () => {
+    const responseData: IyzicoApiErrorResponse = {
+      status: 'failure',
+      errorCode: '100001',
+      errorMessage: 'Sistem hatası',
+    };
+
+    const apiError = new IyzicoApiError(
+      'Sistem hatası',
+      422,
+      responseData,
+      'req_12345',
+      {
+        url: 'https://sandbox-api.iyzipay.com/v2/subscription/products',
+        method: 'POST',
+      }
+    );
+
+    const isSandbox = isSandboxLimitationError(
+      apiError,
+      true,
+      '/v2/subscription/products'
+    );
+
+    expect(isSandbox).toBe(true);
+  });
+
+  test('should not detect sandbox error if not in sandbox mode', () => {
+    const responseData: IyzicoApiErrorResponse = {
+      status: 'failure',
+      errorCode: '100001',
+      errorMessage: 'Sistem hatası',
+    };
+
+    const apiError = new IyzicoApiError(
+      'Sistem hatası',
+      422,
+      responseData
+    );
+
+    const isSandbox = isSandboxLimitationError(
+      apiError,
+      false, // Not in sandbox mode
+      '/v2/subscription/products'
+    );
+
+    expect(isSandbox).toBe(false);
+  });
+
+  test('should not detect sandbox error for different error code', () => {
+    const responseData: IyzicoApiErrorResponse = {
+      status: 'failure',
+      errorCode: '201051', // Different error code (plan already exists)
+      errorMessage: 'Ödeme planı zaten var.',
+    };
+
+    const apiError = new IyzicoApiError(
+      'Ödeme planı zaten var.',
+      422,
+      responseData
+    );
+
+    const isSandbox = isSandboxLimitationError(
+      apiError,
+      true,
+      '/v2/subscription/products'
+    );
+
+    expect(isSandbox).toBe(false);
+  });
+
+  test('should not detect sandbox error for non-subscription paths', () => {
+    const responseData: IyzicoApiErrorResponse = {
+      status: 'failure',
+      errorCode: '100001',
+      errorMessage: 'Sistem hatası',
+    };
+
+    const apiError = new IyzicoApiError(
+      'Sistem hatası',
+      422,
+      responseData,
+      'req_12345',
+      {
+        url: 'https://sandbox-api.iyzipay.com/payment/bin/check',
+        method: 'POST',
+      }
+    );
+
+    const isSandbox = isSandboxLimitationError(
+      apiError,
+      true,
+      '/payment/bin/check' // Not a subscription path
+    );
+
+    expect(isSandbox).toBe(false);
+  });
+
+  test('should not detect for different status code', () => {
+    const responseData: IyzicoApiErrorResponse = {
+      status: 'failure',
+      errorCode: '100001',
+      errorMessage: 'Sistem hatası',
+    };
+
+    const apiError = new IyzicoApiError(
+      'Sistem hatası',
+      404, // Different status code
+      responseData
+    );
+
+    const isSandbox = isSandboxLimitationError(
+      apiError,
+      true,
+      '/v2/subscription/products'
+    );
+
+    expect(isSandbox).toBe(false);
+  });
+
+  test('should handle non-API errors gracefully', () => {
+    const networkError = new IyzicoNetworkError('Network failed');
+    
+    const isSandbox = isSandboxLimitationError(
+      networkError,
+      true,
+      '/v2/subscription/products'
+    );
+
+    expect(isSandbox).toBe(false);
+  });
+
+  test('should handle undefined path', () => {
+    const responseData: IyzicoApiErrorResponse = {
+      status: 'failure',
+      errorCode: '100001',
+      errorMessage: 'Sistem hatası',
+    };
+
+    const apiError = new IyzicoApiError(
+      'Sistem hatası',
+      422,
+      responseData
+    );
+
+    const isSandbox = isSandboxLimitationError(
+      apiError,
+      true
+      // No path provided
+    );
+
+    expect(isSandbox).toBe(false);
   });
 });
 

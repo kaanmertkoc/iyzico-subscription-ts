@@ -11,7 +11,8 @@ import {
   IyzicoNetworkError,
 } from '../src/error';
 
-// Mock fetch globally
+// Mock fetch globally - tests validate SDK logic, not actual Iyzico API
+// Note: See tests/SANDBOX_TESTING.md for info about sandbox limitations
 const mockFetch = vi.fn<typeof fetch>();
 globalThis.fetch = mockFetch;
 const fetchMock = mockFetch;

@@ -224,17 +224,134 @@ export default async function handler(request) {
 }
 ```
 
+## ⚠️ Sandbox Limitations
+
+**Important**: Iyzico's sandbox environment has significant limitations for subscription routes.
+
+### What Works in Sandbox
+
+✅ **Health Check Endpoints**
+```typescript
+const iyzico = new IyzicoClient({
+  apiKey: 'sandbox-api-key',
+  secretKey: 'sandbox-secret-key',
+  isSandbox: true // Triggers automatic warning
+});
+
+// ✅ These work in sandbox
+await iyzico.health.check();
+await iyzico.health.binCheck('552879');
+```
+
+### What Does NOT Work in Sandbox
+
+❌ **All Subscription Routes** (Products, Plans, Subscriptions, Checkout)
+
+```typescript
+// ❌ These will throw IyzicoSandboxLimitationError in sandbox
+await iyzico.products.create(...);
+await iyzico.plans.create(...);
+await iyzico.subscriptions.create(...);
+await iyzico.checkout.create(...);
+```
+
+### Handling Sandbox Errors
+
+The SDK automatically detects sandbox limitations and throws a specialized error:
+
+```typescript
+import { 
+  IyzicoClient, 
+  IyzicoSandboxLimitationError,
+  isSandboxLimitationError 
+} from '@kaanmertkoc/iyzico-subs-ts';
+
+const iyzico = new IyzicoClient({
+  apiKey: process.env.IYZICO_API_KEY!,
+  secretKey: process.env.IYZICO_SECRET_KEY!,
+  isSandbox: true
+});
+
+try {
+  await iyzico.products.create({
+    name: 'Test Product',
+    description: 'Test'
+  });
+} catch (error) {
+  if (error instanceof IyzicoSandboxLimitationError) {
+    console.error('⚠️  Sandbox Limitation:', error.message);
+    console.error('Affected route:', error.affectedRoute);
+    console.error('Suggestion:', error.getSuggestion());
+    // Example: Switch to production or mock the data
+  }
+  
+  // Alternative: Use helper function
+  if (isSandboxLimitationError(error)) {
+    // Handle sandbox limitation
+  }
+}
+```
+
+### Migration to Production
+
+When ready for production, simply update your configuration:
+
+```typescript
+const iyzico = new IyzicoClient({
+  apiKey: process.env.IYZICO_PRODUCTION_API_KEY!,
+  secretKey: process.env.IYZICO_PRODUCTION_SECRET_KEY!,
+  isSandbox: false // Use production environment
+});
+
+// ✅ Now all subscription routes work
+await iyzico.products.create(...);
+await iyzico.subscriptions.create(...);
+```
+
+### Environment-Based Configuration
+
+Best practice for handling both environments:
+
+```typescript
+const iyzico = new IyzicoClient({
+  apiKey: process.env.NODE_ENV === 'production'
+    ? process.env.IYZICO_PRODUCTION_API_KEY!
+    : process.env.IYZICO_SANDBOX_API_KEY!,
+  secretKey: process.env.NODE_ENV === 'production'
+    ? process.env.IYZICO_PRODUCTION_SECRET_KEY!
+    : process.env.IYZICO_SANDBOX_SECRET_KEY!,
+  isSandbox: process.env.NODE_ENV !== 'production'
+});
+
+// Check if sandbox mode is active
+if (iyzico.isSandbox) {
+  console.log('⚠️  Running in sandbox mode - subscription routes unavailable');
+  // Use mock data or skip subscription operations
+}
+```
+
 ## ⚡ Error Handling
 
 The SDK provides structured error handling with user-friendly messages:
 
 ```typescript
-import { IyzicoClient, IyzicoApiError, IyzicoNetworkError } from '@kaanmertkoc/iyzico-subs-ts';
+import { 
+  IyzicoClient, 
+  IyzicoApiError, 
+  IyzicoNetworkError,
+  IyzicoSandboxLimitationError 
+} from '@kaanmertkoc/iyzico-subs-ts';
 
 try {
   const subscription = await iyzico.subscriptions.create(data);
 } catch (error) {
-  if (error instanceof IyzicoApiError) {
+  // Sandbox limitation (422 with code "100001")
+  if (error instanceof IyzicoSandboxLimitationError) {
+    console.error('Sandbox limitation:', error.message);
+    console.error('Use production credentials for this route');
+  }
+  // General API errors (4xx, 5xx)
+  else if (error instanceof IyzicoApiError) {
     console.error('API Error:', {
       statusCode: error.statusCode,
       message: error.message,
@@ -243,7 +360,9 @@ try {
       category: error.getCategory(),
       isRetryable: error.isRetryable()
     });
-  } else if (error instanceof IyzicoNetworkError) {
+  }
+  // Network errors (timeout, connection issues)
+  else if (error instanceof IyzicoNetworkError) {
     console.error('Network Error:', {
       message: error.message,
       isTimeout: error.isTimeout
@@ -251,6 +370,16 @@ try {
   }
 }
 ```
+
+### Error Types
+
+| Error Type | When It Occurs | Retryable |
+|------------|----------------|----------|
+| `IyzicoSandboxLimitationError` | Subscription routes in sandbox (422 + code "100001") | ❌ No - Use production |
+| `IyzicoApiError` | API validation/business logic errors (4xx/5xx) | Depends on status |
+| `IyzicoNetworkError` | Network issues, timeouts, DNS failures | ✅ Yes |
+| `IyzicoValidationError` | Invalid request parameters (400) | ❌ No - Fix request |
+| `IyzicoAuthenticationError` | Invalid credentials (401) | ❌ No - Check credentials |
 
 ## 🛠️ Development
 

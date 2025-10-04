@@ -5,6 +5,8 @@ export {
   IyzicoApiError,
   IyzicoNetworkError,
   IyzicoConfigError,
+  IyzicoSandboxLimitationError,
+  isSandboxLimitationError,
   type IyzicoClientOptions,
   type IyzicoApiErrorResponse,
   IYZICO_ERROR_MESSAGES,

@@ -386,6 +386,77 @@ export class IyzicoNetworkError extends IyzicoError {
 }
 
 /**
+ * Sandbox limitation error - thrown when trying to use subscription routes in sandbox
+ * 
+ * @see https://github.com/kaanmertkoc/iyzico-subscription-ts#-sandbox-limitations
+ */
+export class IyzicoSandboxLimitationError extends IyzicoApiError {
+  public override readonly name = 'IyzicoSandboxLimitationError';
+  public readonly affectedRoute!: string;
+
+  constructor(path: string, requestId?: string) {
+    const responseData: IyzicoApiErrorResponse = {
+      status: 'failure',
+      errorCode: '100001',
+      errorMessage: 'Sistem hatası',
+      errorGroup: 'SANDBOX_LIMITATION',
+    };
+
+    super(
+      `Sandbox environment does not support: ${path}`,
+      422,
+      responseData,
+      requestId,
+      { method: 'ANY', url: path }
+    );
+
+    // Store the affected route
+    Object.defineProperty(this, 'affectedRoute', {
+      value: path,
+      writable: false,
+      enumerable: true,
+    });
+  }
+
+  /**
+   * Returns a user-friendly error message
+   */
+  public getUserFriendlyMessage(): string {
+    return (
+      'Iyzico sandbox does not support subscription routes. ' +
+      'Please use production credentials for testing subscription features. ' +
+      'You can test the health check endpoint (BIN check) in sandbox. ' +
+      'Learn more: https://github.com/kaanmertkoc/iyzico-subscription-ts#-sandbox-limitations'
+    );
+  }
+
+  /**
+   * Returns actionable suggestions for resolving the sandbox limitation
+   */
+  public getSuggestion(): string {
+    return (
+      'Switch to production credentials to use subscription routes. ' +
+      'Set isSandbox: false in your IyzicoClient configuration. ' +
+      'Documentation: https://github.com/kaanmertkoc/iyzico-subscription-ts#-sandbox-limitations'
+    );
+  }
+
+  /**
+   * Override category for sandbox errors
+   */
+  public getCategory(): ErrorCategory {
+    return ErrorCategory.CONFIGURATION;
+  }
+
+  /**
+   * Sandbox errors are not retryable
+   */
+  public isRetryable(): boolean {
+    return false;
+  }
+}
+
+/**
  * Configuration and validation errors
  */
 export class IyzicoConfigError extends IyzicoError {
@@ -545,4 +616,38 @@ export class IyzicoErrorUtils {
       type: typeof error,
     };
   }
+}
+
+/**
+ * Helper function to detect if an error is due to sandbox limitations
+ * 
+ * Iyzico returns 422 with error code "100001" ("Sistem hatası") when trying to
+ * access subscription routes in sandbox environment.
+ * 
+ * @param error - The error to check
+ * @param isSandbox - Whether the client is configured for sandbox
+ * @param path - The API path that was called
+ * @returns true if this is a sandbox limitation error
+ */
+export function isSandboxLimitationError(
+  error: unknown,
+  isSandbox: boolean,
+  path?: string
+): boolean {
+  // Only check if sandbox mode is enabled
+  if (!isSandbox) return false;
+
+  if (error instanceof IyzicoApiError) {
+    // Iyzico returns 422 with error code 100001 "Sistem hatası" for sandbox requests
+    const isSandboxSystemError =
+      error.statusCode === 422 && error.errorCode === '100001';
+
+    // Check if this is a subscription-related path
+    const errorPath = path || error.url || '';
+    const isSubscriptionPath = errorPath.includes('/subscription/');
+
+    return isSandboxSystemError && isSubscriptionPath;
+  }
+
+  return false;
 }
