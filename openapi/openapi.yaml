@@ -4,34 +4,57 @@ info:
   description: |
     Official TypeScript SDK for Iyzico's Subscription API. This SDK provides a clean, type-safe interface for managing subscription products, pricing plans, subscriptions, and checkout flows.
     
+    ## ⚠️ CRITICAL: Sandbox Limitations
+    
+    **Iyzico's sandbox environment does NOT support subscription routes.**
+    
+    ### ✅ Works in Sandbox:
+    - `POST /payment/bin/check` - Card BIN validation (Health Check)
+    
+    ### ❌ NOT Available in Sandbox:
+    - **ALL** subscription routes (`/v2/subscription/*`):
+      - Products endpoints
+      - Pricing plans endpoints
+      - Subscriptions endpoints
+      - Checkout form endpoints
+    
+    ### Testing Strategy:
+    
+    1. **Test credentials** with BIN check in sandbox
+    2. **Use production credentials** for subscription features
+    3. **Create test products** with small amounts in production
+    4. **Mock responses** for automated CI/CD tests
+    
+    **Error Response:** Sandbox returns `422` with error code `100001` ("Sistem hatası") for subscription routes.
+    
+    **Documentation:** https://github.com/kaanmertkoc/iyzico-subscription-ts#-sandbox-limitations
+    
+    ---
+    
     ## Features
     - Full TypeScript support with comprehensive type definitions
     - Cross-platform compatible (Node.js 18+, Bun, Deno, Browsers, Serverless)
     - Zero dependencies
     - Automatic HMAC-SHA256 authentication
-    - Comprehensive error handling
+    - Comprehensive error handling with `IyzicoSandboxLimitationError`
     
     ## Installation
     ```bash
-    bun install @kaanmertkoc/iyzico-subs-ts
-    # or
     npm install @kaanmertkoc/iyzico-subs-ts
     # or
+    bun install @kaanmertkoc/iyzico-subs-ts
+    # or
     yarn add @kaanmertkoc/iyzico-subs-ts
-    # or
-    pnpm add @kaanmertkoc/iyzico-subs-ts
-    # or
-    deno add @kaanmertkoc/iyzico-subs-ts
     ```
     
-    ## Quick Start
+    ## Quick Start (Production)
     ```typescript
     import { IyzicoClient } from '@kaanmertkoc/iyzico-subs-ts';
     
     const iyzico = new IyzicoClient({
       apiKey: process.env.IYZICO_API_KEY,
       secretKey: process.env.IYZICO_SECRET_KEY,
-      isSandbox: true
+      isSandbox: false  // Use production for subscriptions
     });
     
     const product = await iyzico.products.create({
@@ -55,24 +78,39 @@ info:
 
 servers:
   - url: https://api.iyzipay.com
-    description: Production server
+    description: Production server (✅ All endpoints work)
   - url: https://sandbox-api.iyzipay.com
-    description: Sandbox server
+    description: Sandbox server (⚠️ Only /payment/bin/check works. Subscription routes NOT available)
 
 security:
   - IyzicoAuth: []
 
 tags:
   - name: Products
-    description: Manage subscription products
+    description: |
+      Manage subscription products
+      
+      ⚠️ **NOT available in sandbox.** Use production credentials.
   - name: Plans
-    description: Manage pricing plans for products
+    description: |
+      Manage pricing plans for products
+      
+      ⚠️ **NOT available in sandbox.** Use production credentials.
   - name: Subscriptions
-    description: Manage customer subscriptions
+    description: |
+      Manage customer subscriptions
+      
+      ⚠️ **NOT available in sandbox.** Use production credentials.
   - name: Checkout
-    description: Initialize checkout forms and subscriptions
+    description: |
+      Initialize checkout forms and subscriptions
+      
+      ⚠️ **NOT available in sandbox.** Use production credentials.
   - name: Health
-    description: Utility endpoints for health checks and BIN validation
+    description: |
+      Utility endpoints for health checks and BIN validation
+      
+      ✅ **Works in both sandbox and production.**
 
 paths:
   # ==================== PRODUCTS ====================

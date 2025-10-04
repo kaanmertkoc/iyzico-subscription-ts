@@ -68,9 +68,82 @@
       #redoc-container {
         margin-top: 0;
       }
+
+      /* Sandbox warning banner */
+      .sandbox-warning {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+        color: white;
+        padding: 1.5rem 3rem;
+        border-bottom: 4px solid rgba(0, 0, 0, 0.1);
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%, 100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.95;
+        }
+      }
+
+      .sandbox-warning h2 {
+        margin: 0 0 0.75rem 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .sandbox-warning p {
+        margin: 0.5rem 0;
+        font-size: 1rem;
+        line-height: 1.6;
+      }
+
+      .sandbox-warning strong {
+        font-weight: 700;
+        text-decoration: underline;
+      }
+
+      .sandbox-warning ul {
+        margin: 0.75rem 0;
+        padding-left: 1.5rem;
+      }
+
+      .sandbox-warning li {
+        margin: 0.25rem 0;
+      }
+
+      .sandbox-warning a {
+        color: white;
+        font-weight: 600;
+        text-decoration: underline;
+      }
+
+      .sandbox-warning a:hover {
+        opacity: 0.8;
+      }
     </style>
   </head>
   <body>
+    <!-- Sandbox Warning Banner -->
+    <div class="sandbox-warning">
+      <h2>⚠️ CRITICAL: Sandbox Limitations</h2>
+      <p>
+        <strong>Iyzico's sandbox environment does NOT support subscription routes.</strong>
+      </p>
+      <p>
+        ✅ <strong>Works in Sandbox:</strong> Only <code>/payment/bin/check</code> (BIN validation)
+      </p>
+      <p>
+        ❌ <strong>NOT Available in Sandbox:</strong> ALL subscription routes (<code>/v2/subscription/*</code>)
+      </p>
+      <p>
+        📚 <a href="https://github.com/kaanmertkoc/iyzico-subscription-ts#-sandbox-limitations" target="_blank">Read full documentation →</a>
+      </p>
+    </div>
     <!-- Custom header -->
     <div class="custom-header">
       <h1>🚀 Iyzico Subscription API</h1>

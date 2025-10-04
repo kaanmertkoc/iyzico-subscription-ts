@@ -590,11 +590,12 @@ export class IyzicoErrorUtils {
   static formatForLogging(error: unknown): Record<string, unknown> {
     if (error instanceof IyzicoError) {
       const errorData = error.toJSON();
-      // Remove sensitive data that shouldn't be logged
-      if ('responseData' in errorData && typeof errorData.responseData === 'object') {
+      if (
+        'responseData' in errorData &&
+        typeof errorData.responseData === 'object'
+      ) {
         const responseData = errorData.responseData as Record<string, unknown>;
         const sanitized = { ...responseData };
-        // Remove potentially sensitive fields
         delete sanitized.authToken;
         delete sanitized.apiKey;
         delete sanitized.secretKey;
