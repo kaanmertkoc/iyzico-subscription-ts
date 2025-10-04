@@ -1,4 +1,5 @@
 # Development files
+openapi/
 examples/
 tests/
 coverage/

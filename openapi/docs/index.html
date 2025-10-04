@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Iyzico Subscription API Documentation</title>
+    <meta
+      name="description"
+      content="Official API documentation for @kaanmertkoc/iyzico-subs-ts - TypeScript SDK for Iyzico's Subscription API"
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>"
+    />
+    <!-- Redoc -->
+    <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          'Helvetica Neue', Arial, sans-serif;
+      }
+
+      /* Custom header */
+      .custom-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem 3rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .custom-header h1 {
+        margin: 0 0 0.5rem 0;
+        font-size: 2rem;
+        font-weight: 700;
+      }
+
+      .custom-header p {
+        margin: 0;
+        opacity: 0.9;
+        font-size: 1.1rem;
+      }
+
+      .custom-header-links {
+        margin-top: 1rem;
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .custom-header-links a {
+        color: white;
+        text-decoration: none;
+        padding: 0.5rem 1rem;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 6px;
+        transition: all 0.3s ease;
+        font-weight: 500;
+      }
+
+      .custom-header-links a:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+      }
+
+      /* Redoc customization */
+      #redoc-container {
+        margin-top: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Custom header -->
+    <div class="custom-header">
+      <h1>🚀 Iyzico Subscription API</h1>
+      <p>
+        Official TypeScript SDK Documentation - Cross-platform compatible, zero
+        dependencies
+      </p>
+      <div class="custom-header-links">
+        <a
+          href="https://github.com/kaanmertkoc/iyzico-subscription-ts"
+          target="_blank"
+          >📦 GitHub</a
+        >
+        <a
+          href="https://www.npmjs.com/package/@kaanmertkoc/iyzico-subs-ts"
+          target="_blank"
+          >📚 NPM</a
+        >
+        <a href="./openapi.yaml" download>⬇️ Download OpenAPI Spec</a>
+        <a href="https://kaanmertkoc.com" target="_blank">👨‍💻 Author</a>
+      </div>
+    </div>
+    <!-- Redoc container -->
+    <div id="redoc-container"></div>
+    <script>
+      // Initialize Redoc
+      Redoc.init(
+        './openapi.yaml',
+        {
+          scrollYOffset: 0,
+          theme: {
+            colors: {
+              primary: {
+                main: '#667eea',
+              },
+            },
+            typography: {
+              fontSize: '15px',
+              fontFamily:
+                '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+              headings: {
+                fontFamily:
+                  '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                fontWeight: '600',
+              },
+              code: {
+                fontSize: '14px',
+                fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+              },
+            },
+            sidebar: {
+              backgroundColor: '#fafafa',
+              textColor: '#333',
+              activeTextColor: '#667eea',
+            },
+            rightPanel: {
+              backgroundColor: '#263238',
+              textColor: '#ffffff',
+            },
+          },
+          expandResponses: '200,201',
+          jsonSampleExpandLevel: 2,
+          hideDownloadButton: false,
+          disableSearch: false,
+          nativeScrollbars: false,
+          pathInMiddlePanel: false,
+          requiredPropsFirst: true,
+          sortPropsAlphabetically: false,
+          hideHostname: false,
+          expandSingleSchemaField: true,
+          showExtensions: true,
+          hideSingleRequestSampleTab: true,
+        },
+        document.getElementById('redoc-container')
+      );
+    </script>
+  </body>
+</html>

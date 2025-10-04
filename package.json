@@ -74,6 +74,8 @@
     "typecheck": "tsc --noEmit",
     "dev": "npm --prefix examples/hono-app run dev",
     "dev:install": "cd examples/hono-app && npm install",
+    "docs:serve": "npx serve openapi/docs -l 8080",
+    "docs:open": "open openapi/docs/index.html",
     "prepublishOnly": "npm run build"
   },
   "engines": {

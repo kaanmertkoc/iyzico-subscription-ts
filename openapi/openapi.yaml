@@ -1,0 +1,1117 @@
+openapi: 3.0.3
+info:
+  title: Iyzico Subscription API
+  description: |
+    Official TypeScript SDK for Iyzico's Subscription API. This SDK provides a clean, type-safe interface for managing subscription products, pricing plans, subscriptions, and checkout flows.
+    
+    ## Features
+    - Full TypeScript support with comprehensive type definitions
+    - Cross-platform compatible (Node.js 18+, Bun, Deno, Browsers, Serverless)
+    - Zero dependencies
+    - Automatic HMAC-SHA256 authentication
+    - Comprehensive error handling
+    
+    ## Installation
+    ```bash
+    bun install @kaanmertkoc/iyzico-subs-ts
+    # or
+    npm install @kaanmertkoc/iyzico-subs-ts
+    # or
+    yarn add @kaanmertkoc/iyzico-subs-ts
+    # or
+    pnpm add @kaanmertkoc/iyzico-subs-ts
+    # or
+    deno add @kaanmertkoc/iyzico-subs-ts
+    ```
+    
+    ## Quick Start
+    ```typescript
+    import { IyzicoClient } from '@kaanmertkoc/iyzico-subs-ts';
+    
+    const iyzico = new IyzicoClient({
+      apiKey: process.env.IYZICO_API_KEY,
+      secretKey: process.env.IYZICO_SECRET_KEY,
+      isSandbox: true
+    });
+    
+    const product = await iyzico.products.create({
+      name: 'Premium Subscription',
+      description: 'Monthly premium plan'
+    });
+    ```
+    
+    ## Repository
+    - GitHub: https://github.com/kaanmertkoc/iyzico-subscription-ts
+    - NPM: https://www.npmjs.com/package/@kaanmertkoc/iyzico-subs-ts
+    
+  version: 1.0.0
+  contact:
+    name: Kaan Mert Koç
+    url: https://kaanmertkoc.com
+    email: kaanmertkoc@example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.iyzipay.com
+    description: Production server
+  - url: https://sandbox-api.iyzipay.com
+    description: Sandbox server
+
+security:
+  - IyzicoAuth: []
+
+tags:
+  - name: Products
+    description: Manage subscription products
+  - name: Plans
+    description: Manage pricing plans for products
+  - name: Subscriptions
+    description: Manage customer subscriptions
+  - name: Checkout
+    description: Initialize checkout forms and subscriptions
+  - name: Health
+    description: Utility endpoints for health checks and BIN validation
+
+paths:
+  # ==================== PRODUCTS ====================
+  /v2/subscription/products:
+    get:
+      tags: [Products]
+      summary: List all products
+      operationId: listProducts
+      description: Retrieves a list of all subscription products
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    
+    post:
+      tags: [Products]
+      summary: Create a product
+      operationId: createProduct
+      description: Creates a new subscription product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductRequest'
+      responses:
+        '200':
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /v2/subscription/products/{referenceCode}:
+    get:
+      tags: [Products]
+      summary: Retrieve a product
+      operationId: retrieveProduct
+      description: Retrieves a specific product by its reference code
+      parameters:
+        - $ref: '#/components/parameters/ReferenceCode'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    
+    post:
+      tags: [Products]
+      summary: Update a product
+      operationId: updateProduct
+      description: Updates an existing product
+      parameters:
+        - $ref: '#/components/parameters/ReferenceCode'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductRequest'
+      responses:
+        '200':
+          description: Product updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    
+    delete:
+      tags: [Products]
+      summary: Delete a product
+      operationId: deleteProduct
+      description: Deletes a product by its reference code
+      parameters:
+        - $ref: '#/components/parameters/ReferenceCode'
+      responses:
+        '200':
+          description: Product deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  # ==================== PLANS ====================
+  /v2/subscription/products/{productReferenceCode}/pricing-plans:
+    get:
+      tags: [Plans]
+      summary: List pricing plans
+      operationId: listPlans
+      description: Lists all pricing plans for a product with pagination
+      parameters:
+        - name: productReferenceCode
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Product reference code
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: Page number
+        - name: count
+          in: query
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+          description: Items per page
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanListResponse'
+    
+    post:
+      tags: [Plans]
+      summary: Create a pricing plan
+      operationId: createPlan
+      description: Creates a new pricing plan for a product
+      parameters:
+        - name: productReferenceCode
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePlanRequest'
+      responses:
+        '200':
+          description: Plan created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanResponse'
+
+  /v2/subscription/pricing-plans/{pricingPlanReferenceCode}:
+    get:
+      tags: [Plans]
+      summary: Retrieve a pricing plan
+      operationId: retrievePlan
+      parameters:
+        - name: pricingPlanReferenceCode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanResponse'
+    
+    post:
+      tags: [Plans]
+      summary: Update a pricing plan
+      operationId: updatePlan
+      parameters:
+        - name: pricingPlanReferenceCode
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePlanRequest'
+      responses:
+        '200':
+          description: Plan updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanResponse'
+    
+    delete:
+      tags: [Plans]
+      summary: Delete a pricing plan
+      operationId: deletePlan
+      parameters:
+        - name: pricingPlanReferenceCode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Plan deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleResponse'
+
+  # ==================== SUBSCRIPTIONS ====================
+  /v2/subscription/subscriptions:
+    get:
+      tags: [Subscriptions]
+      summary: List subscriptions
+      operationId: listSubscriptions
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: count
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionListResponse'
+
+  /v2/subscription/subscriptions/{subscriptionReferenceCode}:
+    get:
+      tags: [Subscriptions]
+      summary: Retrieve a subscription
+      operationId: retrieveSubscription
+      parameters:
+        - name: subscriptionReferenceCode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+
+  /v2/subscription/subscriptions/{subscriptionReferenceCode}/activate:
+    post:
+      tags: [Subscriptions]
+      summary: Activate a subscription
+      operationId: activateSubscription
+      description: Activates a pending subscription
+      parameters:
+        - name: subscriptionReferenceCode
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                conversationId:
+                  type: string
+      responses:
+        '200':
+          description: Subscription activated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+
+  /v2/subscription/subscriptions/{subscriptionReferenceCode}/cancel:
+    post:
+      tags: [Subscriptions]
+      summary: Cancel a subscription
+      operationId: cancelSubscription
+      parameters:
+        - name: subscriptionReferenceCode
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                conversationId:
+                  type: string
+      responses:
+        '200':
+          description: Subscription cancelled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+
+  /v2/subscription/subscriptions/{subscriptionReferenceCode}/upgrade:
+    post:
+      tags: [Subscriptions]
+      summary: Upgrade a subscription
+      operationId: upgradeSubscription
+      parameters:
+        - name: subscriptionReferenceCode
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpgradeSubscriptionRequest'
+      responses:
+        '200':
+          description: Subscription upgraded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+
+  /operation/retry:
+    post:
+      tags: [Subscriptions]
+      summary: Retry a failed payment
+      operationId: retrySubscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - referenceCode
+              properties:
+                conversationId:
+                  type: string
+                referenceCode:
+                  type: string
+      responses:
+        '200':
+          description: Payment retry initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+
+  # ==================== CHECKOUT ====================
+  /v2/subscription/checkoutform/initialize:
+    post:
+      tags: [Checkout]
+      summary: Initialize checkout form
+      operationId: initializeCheckout
+      description: Creates a checkout form for subscription payment (3DS)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitializeCheckoutRequest'
+      responses:
+        '200':
+          description: Checkout form created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutFormResponse'
+
+  /v2/subscription/checkoutform/{token}:
+    post:
+      tags: [Checkout]
+      summary: Retrieve checkout result
+      operationId: retrieveCheckout
+      description: Retrieves the result of a checkout form using the callback token
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                conversationId:
+                  type: string
+                token:
+                  type: string
+      responses:
+        '200':
+          description: Checkout result retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionInitResponse'
+
+  /v2/subscription/initialize:
+    post:
+      tags: [Checkout]
+      summary: Initialize subscription (NON-3DS)
+      operationId: initializeSubscription
+      description: Creates a subscription directly with payment card (non-3DS)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitializeSubscriptionRequest'
+      responses:
+        '200':
+          description: Subscription initialized successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionInitResponse'
+
+  /v2/subscription/card-update/checkoutform/initialize:
+    post:
+      tags: [Checkout]
+      summary: Initialize card update
+      operationId: initializeCardUpdate
+      description: Creates a checkout form for updating payment card
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardUpdateRequest'
+      responses:
+        '200':
+          description: Card update form created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutFormResponse'
+
+  # ==================== HEALTH ====================
+  /payment/bin/check:
+    post:
+      tags: [Health]
+      summary: Check card BIN
+      operationId: checkBin
+      description: Validates and retrieves information about a card BIN number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BinCheckRequest'
+      responses:
+        '200':
+          description: BIN check successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BinCheckResponse'
+
+components:
+  securitySchemes:
+    IyzicoAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: |
+        Iyzico uses HMAC-SHA256 authentication. The SDK automatically handles this.
+        
+        Format: `IYZWSv2 {base64(apiKey:randomKey:signature)}`
+
+  parameters:
+    ReferenceCode:
+      name: referenceCode
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Unique reference code
+
+  schemas:
+    # ==================== BASE SCHEMAS ====================
+    BaseRequest:
+      type: object
+      properties:
+        locale:
+          type: string
+          enum: [tr, en]
+          default: tr
+          description: Locale for the request
+        conversationId:
+          type: string
+          description: Unique identifier for tracking the request
+
+    BaseResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [success, failure]
+        locale:
+          type: string
+        systemTime:
+          type: integer
+          format: int64
+        conversationId:
+          type: string
+        errorCode:
+          type: string
+        errorMessage:
+          type: string
+        errorGroup:
+          type: string
+
+    SimpleResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+
+    Address:
+      type: object
+      required:
+        - contactName
+        - country
+        - city
+        - address
+      properties:
+        contactName:
+          type: string
+        country:
+          type: string
+        city:
+          type: string
+        address:
+          type: string
+        zipCode:
+          type: string
+
+    Customer:
+      type: object
+      required:
+        - name
+        - surname
+        - email
+      properties:
+        name:
+          type: string
+        surname:
+          type: string
+        email:
+          type: string
+          format: email
+        gsmNumber:
+          type: string
+        identityNumber:
+          type: string
+        billingAddress:
+          $ref: '#/components/schemas/Address'
+        shippingAddress:
+          $ref: '#/components/schemas/Address'
+
+    PaymentCard:
+      type: object
+      properties:
+        cardHolderName:
+          type: string
+        cardNumber:
+          type: string
+        expireMonth:
+          type: string
+        expireYear:
+          type: string
+        cvc:
+          type: string
+        registerConsumerCard:
+          type: boolean
+        cardToken:
+          type: string
+        consumerToken:
+          type: string
+        ucsToken:
+          type: string
+
+    # ==================== PRODUCT SCHEMAS ====================
+    ProductData:
+      type: object
+      properties:
+        referenceCode:
+          type: string
+        createdDate:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+        pricingPlans:
+          type: array
+          items:
+            $ref: '#/components/schemas/PricingPlan'
+
+    CreateProductRequest:
+      allOf:
+        - $ref: '#/components/schemas/BaseRequest'
+        - type: object
+          required:
+            - name
+          properties:
+            name:
+              type: string
+              minLength: 1
+              maxLength: 255
+            description:
+              type: string
+              maxLength: 500
+
+    UpdateProductRequest:
+      allOf:
+        - $ref: '#/components/schemas/BaseRequest'
+        - type: object
+          required:
+            - productReferenceCode
+            - name
+          properties:
+            productReferenceCode:
+              type: string
+            name:
+              type: string
+            description:
+              type: string
+
+    ProductResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ProductData'
+
+    ProductListResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/ProductData'
+
+    # ==================== PLAN SCHEMAS ====================
+    PricingPlan:
+      type: object
+      properties:
+        referenceCode:
+          type: string
+        name:
+          type: string
+        price:
+          type: number
+        currencyCode:
+          type: string
+          enum: [TRY, USD, EUR, GBP]
+        paymentInterval:
+          type: string
+          enum: [DAILY, WEEKLY, MONTHLY, YEARLY]
+        paymentIntervalCount:
+          type: integer
+        planPaymentType:
+          type: string
+          enum: [RECURRING]
+        recurrenceCount:
+          type: integer
+        trialPeriodDays:
+          type: integer
+        productReferenceCode:
+          type: string
+        status:
+          type: string
+        createdDate:
+          type: integer
+          format: int64
+
+    CreatePlanRequest:
+      allOf:
+        - $ref: '#/components/schemas/BaseRequest'
+        - type: object
+          required:
+            - name
+            - productReferenceCode
+            - price
+            - paymentInterval
+            - paymentIntervalCount
+            - currencyCode
+            - planPaymentType
+          properties:
+            name:
+              type: string
+            productReferenceCode:
+              type: string
+            price:
+              type: number
+            paymentInterval:
+              type: string
+              enum: [DAILY, WEEKLY, MONTHLY, YEARLY]
+            paymentIntervalCount:
+              type: integer
+              minimum: 1
+            currencyCode:
+              type: string
+              enum: [TRY, USD, EUR, GBP]
+            planPaymentType:
+              type: string
+              enum: [RECURRING]
+            trialPeriodDays:
+              type: integer
+              minimum: 0
+            recurrenceCount:
+              type: integer
+
+    UpdatePlanRequest:
+      allOf:
+        - $ref: '#/components/schemas/BaseRequest'
+        - type: object
+          required:
+            - name
+            - pricingPlanReferenceCode
+          properties:
+            name:
+              type: string
+            pricingPlanReferenceCode:
+              type: string
+            trialPeriodDays:
+              type: integer
+
+    PlanResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PricingPlan'
+
+    PlanListResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                currentPage:
+                  type: integer
+                pageCount:
+                  type: integer
+                totalCount:
+                  type: integer
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/PricingPlan'
+
+    # ==================== SUBSCRIPTION SCHEMAS ====================
+    SubscriptionData:
+      type: object
+      properties:
+        referenceCode:
+          type: string
+        subscriptionReferenceCode:
+          type: string
+        status:
+          type: string
+
+    UpgradeSubscriptionRequest:
+      type: object
+      required:
+        - resetRecurrenceCount
+        - upgradePeriod
+        - newPricingPlanReferenceCode
+      properties:
+        resetRecurrenceCount:
+          type: boolean
+        useTrial:
+          type: boolean
+        upgradePeriod:
+          type: string
+        newPricingPlanReferenceCode:
+          type: string
+
+    SubscriptionResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/SubscriptionData'
+
+    SubscriptionListResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/SubscriptionData'
+
+    # ==================== CHECKOUT SCHEMAS ====================
+    InitializeCheckoutRequest:
+      allOf:
+        - $ref: '#/components/schemas/BaseRequest'
+        - type: object
+          required:
+            - pricingPlanReferenceCode
+            - callbackUrl
+            - name
+            - surname
+            - email
+          properties:
+            pricingPlanReferenceCode:
+              type: string
+            callbackUrl:
+              type: string
+              format: uri
+            subscriptionInitialStatus:
+              type: string
+              enum: [PENDING, ACTIVE]
+              default: PENDING
+            name:
+              type: string
+            surname:
+              type: string
+            email:
+              type: string
+              format: email
+            gsmNumber:
+              type: string
+            identityNumber:
+              type: string
+            billingAddress:
+              $ref: '#/components/schemas/Address'
+            shippingAddress:
+              $ref: '#/components/schemas/Address'
+
+    InitializeSubscriptionRequest:
+      allOf:
+        - $ref: '#/components/schemas/BaseRequest'
+        - type: object
+          required:
+            - pricingPlanReferenceCode
+            - name
+            - surname
+            - email
+            - paymentCard
+          properties:
+            pricingPlanReferenceCode:
+              type: string
+            subscriptionInitialStatus:
+              type: string
+              enum: [PENDING, ACTIVE]
+              default: ACTIVE
+            name:
+              type: string
+            surname:
+              type: string
+            email:
+              type: string
+              format: email
+            gsmNumber:
+              type: string
+            identityNumber:
+              type: string
+            billingAddress:
+              $ref: '#/components/schemas/Address'
+            shippingAddress:
+              $ref: '#/components/schemas/Address'
+            paymentCard:
+              $ref: '#/components/schemas/PaymentCard'
+
+    CardUpdateRequest:
+      allOf:
+        - $ref: '#/components/schemas/BaseRequest'
+        - type: object
+          required:
+            - callbackUrl
+          properties:
+            callbackUrl:
+              type: string
+              format: uri
+            subscriptionReferenceCode:
+              type: string
+            customerReferenceCode:
+              type: string
+
+    CheckoutFormResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                token:
+                  type: string
+                checkoutFormContent:
+                  type: string
+                tokenExpireTime:
+                  type: integer
+                  format: int64
+
+    SubscriptionInitResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                subscriptionReferenceCode:
+                  type: string
+                status:
+                  type: string
+
+    # ==================== HEALTH SCHEMAS ====================
+    BinCheckRequest:
+      allOf:
+        - $ref: '#/components/schemas/BaseRequest'
+        - type: object
+          required:
+            - binNumber
+          properties:
+            binNumber:
+              type: string
+              pattern: '^\d{6,8}$'
+              description: Card BIN number (6-8 digits)
+
+    BinCheckResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                binNumber:
+                  type: string
+                cardType:
+                  type: string
+                cardAssociation:
+                  type: string
+                cardFamily:
+                  type: string
+                bankName:
+                  type: string
+                bankCode:
+                  type: integer
+                commercial:
+                  type: integer
+
+  responses:
+    BadRequestError:
+      description: Bad request - Invalid input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BaseResponse'
+          example:
+            status: failure
+            errorCode: 5001
+            errorMessage: Invalid request parameters
+            errorGroup: VALIDATION_ERROR
+    
+    UnauthorizedError:
+      description: Unauthorized - Invalid API credentials
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BaseResponse'
+          example:
+            status: failure
+            errorCode: 1001
+            errorMessage: Authentication failed
+            errorGroup: AUTHENTICATION_ERROR
+    
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BaseResponse'
+          example:
+            status: failure
+            errorCode: 404
+            errorMessage: Resource not found
+            errorGroup: NOT_FOUND_ERROR
+    
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BaseResponse'
+          example:
+            status: failure
+            errorCode: 500
+            errorMessage: Internal server error
+            errorGroup: SERVER_ERROR
