@@ -7,10 +7,8 @@ coverage/
 *.spec.ts
 
 # Development docs
-development-v3.md
-development-v4.md
-WARP.md
-CONTRIBUTING.md
+*.md
+!README.md
 
 # Config files
 tsconfig.*.json
