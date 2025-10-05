@@ -2,7 +2,7 @@
 FROM oven/bun:1 AS base
 
 # Install curl for healthcheck
-RUN apk add --no-cache libc6-compat curl
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
