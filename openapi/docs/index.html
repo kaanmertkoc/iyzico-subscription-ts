@@ -12,6 +12,20 @@
       rel="icon"
       href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>"
     />
+    <!-- Plausible -->
+    <script
+      defer
+      data-domain="iyzico-docs.kaanmertkoc.com"
+      src="https://plausible.pleasurebyplease.com/js/script.file-downloads.hash.outbound-links.pageview-props.revenue.tagged-events.js"
+    ></script>
+    <script>
+      window.plausible =
+        window.plausible ||
+        function () {
+          (window.plausible.q = window.plausible.q || []).push(arguments);
+        };
+    </script>
+
     <!-- Redoc -->
     <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
     <style>
@@ -79,7 +93,8 @@
       }
 
       @keyframes pulse {
-        0%, 100% {
+        0%,
+        100% {
           opacity: 1;
         }
         50% {
@@ -132,16 +147,26 @@
     <div class="sandbox-warning">
       <h2>⚠️ CRITICAL: Sandbox Limitations</h2>
       <p>
-        <strong>Iyzico's sandbox environment does NOT support subscription routes.</strong>
+        <strong
+          >Iyzico's sandbox environment does NOT support subscription
+          routes.</strong
+        >
       </p>
       <p>
-        ✅ <strong>Works in Sandbox:</strong> Only <code>/payment/bin/check</code> (BIN validation)
+        ✅ <strong>Works in Sandbox:</strong> Only
+        <code>/payment/bin/check</code> (BIN validation)
       </p>
       <p>
-        ❌ <strong>NOT Available in Sandbox:</strong> ALL subscription routes (<code>/v2/subscription/*</code>)
+        ❌ <strong>NOT Available in Sandbox:</strong> ALL subscription routes
+        (<code>/v2/subscription/*</code>)
       </p>
       <p>
-        📚 <a href="https://github.com/kaanmertkoc/iyzico-subscription-ts#-sandbox-limitations" target="_blank">Read full documentation →</a>
+        📚
+        <a
+          href="https://github.com/kaanmertkoc/iyzico-subscription-ts#-sandbox-limitations"
+          target="_blank"
+          >Read full documentation →</a
+        >
       </p>
     </div>
     <!-- Custom header -->

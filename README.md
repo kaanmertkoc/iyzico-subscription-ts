@@ -132,6 +132,8 @@ Create a `.env` file:
 # Production credentials
 IYZICO_API_KEY=your_production_api_key
 IYZICO_SECRET_KEY=your_production_secret_key
+IYZICO_ENVIRONMENT=production # production or sandbox  (default: production because of sandbox limitations)
+
 
 # Sandbox credentials (optional, only if using sandbox)
 IYZICO_SANDBOX_API_KEY=your_sandbox_api_key
@@ -457,7 +459,6 @@ npm run typecheck
 - **Never expose secret keys** in client-side code
 - Use environment variables for API credentials
 - The SDK automatically handles HMAC-SHA256 authentication
-- All requests are made over HTTPS
 
 ## 🤝 Contributing
 
