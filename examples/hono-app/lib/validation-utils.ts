@@ -140,8 +140,15 @@ export const Schemas = {
     name: z.string().min(1, 'Customer name required'),
     surname: z.string().min(1, 'Customer surname required'),
     email: z.string().email().min(1, 'Customer email required'),
-    gsmNumber: z.string().optional(),
-    identityNumber: z.string().optional(),
+    gsmNumber: z
+      .string()
+      .min(1, 'GSM number is required')
+      .regex(/^\+?[0-9]{10,15}$/, 'Invalid phone number format (use +90XXXXXXXXXX or 05XXXXXXXXX)'),
+    identityNumber: z
+      .string()
+      .min(11, 'Identity number must be 11 digits')
+      .max(11, 'Identity number must be 11 digits')
+      .regex(/^[0-9]{11}$/, 'Identity number must be 11 digits'),
     billingAddress: BaseSchemas.address.optional(),
     shippingAddress: BaseSchemas.address.optional(),
   }),
@@ -153,8 +160,15 @@ export const Schemas = {
     name: z.string().min(1, 'Customer name required'),
     surname: z.string().min(1, 'Customer surname required'),
     email: z.string().email().min(1, 'Customer email required'),
-    gsmNumber: z.string().optional(),
-    identityNumber: z.string().optional(),
+    gsmNumber: z
+      .string()
+      .min(1, 'GSM number is required')
+      .regex(/^\+?[0-9]{10,15}$/, 'Invalid phone number format (use +90XXXXXXXXXX or 05XXXXXXXXX)'),
+    identityNumber: z
+      .string()
+      .min(11, 'Identity number must be 11 digits')
+      .max(11, 'Identity number must be 11 digits')
+      .regex(/^[0-9]{11}$/, 'Identity number must be 11 digits'),
     billingAddress: BaseSchemas.address.optional(),
     shippingAddress: BaseSchemas.address.optional(),
     paymentCard: z.object({

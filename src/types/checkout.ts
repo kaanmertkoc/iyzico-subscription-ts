@@ -12,11 +12,16 @@ export interface CheckoutFormData {
 
 /**
  * Request payload for initializing checkout form
+ *
+ * @warning gsmNumber and identityNumber are REQUIRED by Iyzico API
+ * but you can pass them as default values like +905555555555 or 11111111111 if you want
  */
 export interface InitializeCheckoutRequest extends BaseRequest, BaseCustomer {
   callbackUrl: string;
   pricingPlanReferenceCode: string;
   subscriptionInitialStatus?: 'PENDING' | 'ACTIVE';
+  gsmNumber: string;
+  identityNumber: string;
 }
 
 /**
@@ -36,6 +41,9 @@ export interface PaymentCard {
 
 /**
  * Request payload for initializing subscription via NON-3DS
+ *
+ * @warning gsmNumber and identityNumber are REQUIRED by Iyzico API
+ * but you can pass them as default values like +905555555555 or 11111111111 if you want
  */
 export interface InitializeSubscriptionRequest
   extends BaseRequest,
@@ -43,6 +51,8 @@ export interface InitializeSubscriptionRequest
   pricingPlanReferenceCode: string;
   subscriptionInitialStatus?: 'PENDING' | 'ACTIVE';
   paymentCard: PaymentCard;
+  gsmNumber: string;
+  identityNumber: string;
 }
 
 /**
