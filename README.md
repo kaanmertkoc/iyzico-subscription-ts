@@ -88,6 +88,42 @@ const subscription = await iyzico.subscriptions.create({
 });
 ```
 
+## 📚 Documentation
+
+### Interactive API Documentation
+
+Explore the complete API reference with interactive examples:
+
+- **📖 Interactive Docs**: [iyzico-docs.kaanmertkoc.com](https://iyzico-docs.kaanmertkoc.com) _(Coming Soon)_
+- **📄 OpenAPI Spec**: [View on GitHub](https://github.com/kaanmertkoc/iyzico-subscription-ts/blob/main/openapi/openapi.yaml)
+- **⬇️ Download Spec**: [openapi.yaml](https://raw.githubusercontent.com/kaanmertkoc/iyzico-subscription-ts/main/openapi/openapi.yaml)
+
+### Import to Your Tools
+
+You can import the OpenAPI spec directly into your favorite API tools:
+
+**Postman:**
+```bash
+# Import URL
+https://raw.githubusercontent.com/kaanmertkoc/iyzico-subscription-ts/main/openapi/openapi.yaml
+```
+
+**Insomnia/Bruno/Paw:**
+```bash
+# Download and import
+curl -O https://raw.githubusercontent.com/kaanmertkoc/iyzico-subscription-ts/main/openapi/openapi.yaml
+```
+
+**Local Preview:**
+```bash
+# Serve docs locally
+npm run docs:serve
+# Open in browser
+npm run docs:open
+```
+
+For detailed usage examples across different platforms, refer to the cross-platform usage examples included in this README.
+
 ### Environment Variables
 
 Create a `.env` file:
@@ -415,42 +451,6 @@ npm run test:coverage
 # Type checking
 npm run typecheck
 ```
-
-## 📚 Documentation
-
-### Interactive API Documentation
-
-Explore the complete API reference with interactive examples:
-
-- **📖 Interactive Docs**: [iyzico-docs.kaanmertkoc.com](https://iyzico-docs.kaanmertkoc.com) _(Coming Soon)_
-- **📄 OpenAPI Spec**: [View on GitHub](https://github.com/kaanmertkoc/iyzico-subscription-ts/blob/main/openapi/openapi.yaml)
-- **⬇️ Download Spec**: [openapi.yaml](https://raw.githubusercontent.com/kaanmertkoc/iyzico-subscription-ts/main/openapi/openapi.yaml)
-
-### Import to Your Tools
-
-You can import the OpenAPI spec directly into your favorite API tools:
-
-**Postman:**
-```bash
-# Import URL
-https://raw.githubusercontent.com/kaanmertkoc/iyzico-subscription-ts/main/openapi/openapi.yaml
-```
-
-**Insomnia/Bruno/Paw:**
-```bash
-# Download and import
-curl -O https://raw.githubusercontent.com/kaanmertkoc/iyzico-subscription-ts/main/openapi/openapi.yaml
-```
-
-**Local Preview:**
-```bash
-# Serve docs locally
-npm run docs:serve
-# Open in browser
-npm run docs:open
-```
-
-For detailed usage examples across different platforms, refer to the cross-platform usage examples included in this README.
 
 ## 🔒 Security
 
