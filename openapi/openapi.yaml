@@ -964,6 +964,8 @@ components:
             - name
             - surname
             - email
+            - gsmNumber
+            - identityNumber
           properties:
             pricingPlanReferenceCode:
               type: string
@@ -983,8 +985,14 @@ components:
               format: email
             gsmNumber:
               type: string
+              description: Turkish phone number (required). Format +90XXXXXXXXXX or 05XXXXXXXXX
+              pattern: '^\+?[0-9]{10,15}$'
             identityNumber:
               type: string
+              description: Turkish identity number (required). Must be exactly 11 digits
+              pattern: '^[0-9]{11}$'
+              minLength: 11
+              maxLength: 11
             billingAddress:
               $ref: '#/components/schemas/Address'
             shippingAddress:
@@ -999,6 +1007,8 @@ components:
             - name
             - surname
             - email
+            - gsmNumber
+            - identityNumber
             - paymentCard
           properties:
             pricingPlanReferenceCode:
@@ -1016,8 +1026,14 @@ components:
               format: email
             gsmNumber:
               type: string
+              description: Turkish phone number (required). Format +90XXXXXXXXXX or 05XXXXXXXXX
+              pattern: '^\+?[0-9]{10,15}$'
             identityNumber:
               type: string
+              description: Turkish identity number (required). Must be exactly 11 digits
+              pattern: '^[0-9]{11}$'
+              minLength: 11
+              maxLength: 11
             billingAddress:
               $ref: '#/components/schemas/Address'
             shippingAddress:
