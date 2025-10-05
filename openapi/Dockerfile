@@ -1,6 +1,9 @@
 # Use official Bun image
 FROM oven/bun:1 AS base
 
+# Install curl for healthcheck
+RUN apk add --no-cache libc6-compat curl
+
 # Set working directory
 WORKDIR /app
 
