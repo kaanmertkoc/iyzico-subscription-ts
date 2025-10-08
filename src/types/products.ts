@@ -1,5 +1,10 @@
 import { PricingPlan } from './plans';
-import { BaseRequest, BaseResponse, SimpleResponse } from './core';
+import {
+  BaseRequest,
+  BaseResponse,
+  PaginatedData,
+  SimpleResponse,
+} from './core';
 
 /**
  * Product data structure returned by the API
@@ -44,3 +49,6 @@ export interface UpdateProductResponse extends BaseResponse<ProductData> {}
  * Response data when deleting a product
  */
 export interface DeleteProductResponse extends SimpleResponse {}
+
+export interface ListProductsResponse
+  extends BaseResponse<PaginatedData<ProductData>> {}

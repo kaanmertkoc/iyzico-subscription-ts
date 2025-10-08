@@ -4,6 +4,7 @@ import type {
   SubscriptionResponse,
   SubscriptionData,
   BaseResponse,
+  ListSubscriptionsResponse,
 } from '../types';
 
 /**
@@ -106,8 +107,8 @@ export class SubscriptionsService {
   async list(
     page: number = 1,
     count: number = 10
-  ): Promise<BaseResponse<SubscriptionData[]>> {
-    return this.client.request<BaseResponse<SubscriptionData[]>>({
+  ): Promise<ListSubscriptionsResponse> {
+    return this.client.request<ListSubscriptionsResponse>({
       path: `/v2/subscription/subscriptions?page=${page}&count=${count}`,
       method: 'GET',
     });

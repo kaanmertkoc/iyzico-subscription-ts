@@ -1,4 +1,4 @@
-import { BaseResponse } from './core';
+import { BaseResponse, PaginatedData } from './core';
 
 /**
  * Subscription data returned by the API
@@ -24,3 +24,6 @@ export interface UpgradeSubscriptionRequest {
  * Generic subscription response structure
  */
 export interface SubscriptionResponse extends BaseResponse<SubscriptionData> {}
+
+export interface ListSubscriptionsResponse
+  extends BaseResponse<PaginatedData<SubscriptionData>> {}

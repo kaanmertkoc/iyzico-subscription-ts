@@ -7,6 +7,7 @@ import type {
   DeleteProductResponse,
   ProductData,
   BaseResponse,
+  ListProductsResponse,
 } from '../types';
 
 /**
@@ -39,7 +40,7 @@ export class ProductsService {
    * @returns Promise resolving to the updated product data
    */
   async update(
-    referenceCode: string, 
+    referenceCode: string,
     params: Omit<UpdateProductRequest, 'productReferenceCode'>
   ): Promise<UpdateProductResponse> {
     return this.client.request<UpdateProductResponse>({
@@ -82,8 +83,8 @@ export class ProductsService {
    * Lists all products
    * @returns Promise resolving to the list of products
    */
-  async list(): Promise<BaseResponse<ProductData[]>> {
-    return this.client.request<BaseResponse<ProductData[]>>({
+  async list(): Promise<ListProductsResponse> {
+    return this.client.request<ListProductsResponse>({
       path: '/v2/subscription/products',
       method: 'GET',
     });

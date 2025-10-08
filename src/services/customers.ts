@@ -3,6 +3,7 @@ import type {
   BaseResponse,
   UpdateCustomerRequest,
   UpdateCustomerResponse,
+  ListCustomersResponse,
 } from '../types';
 import { BaseCustomer } from '../types/core';
 
@@ -48,8 +49,8 @@ export class CustomersService {
    * Lists all customers
    * @returns Promise resolving to the list of customers
    */
-  async list(): Promise<BaseResponse<BaseCustomer[]>> {
-    return this.client.request<BaseResponse<BaseCustomer[]>>({
+  async list(): Promise<ListCustomersResponse> {
+    return this.client.request<ListCustomersResponse>({
       path: '/v2/subscription/customers',
       method: 'GET',
     });
