@@ -607,10 +607,15 @@ describe('CustomersService', () => {
         },
       ];
 
-      const expectedResponse: BaseResponse<BaseCustomer[]> = {
+      const expectedResponse = {
         status: 'success',
         systemTime: 1640995200000,
-        data: mockCustomersData,
+        data: {
+          items: mockCustomersData,
+          totalCount: 3,
+          currentPage: 1,
+          pageCount: 1,
+        },
       };
 
       mockClient.request = vi.fn().mockResolvedValue(expectedResponse);
@@ -620,10 +625,10 @@ describe('CustomersService', () => {
 
       // Assert
       expect(result).toEqual(expectedResponse);
-      expect(result.data).toHaveLength(3);
-      expect(result.data?.[0].email).toBe('customer1@example.com');
-      expect(result.data?.[1].email).toBe('customer2@example.com');
-      expect(result.data?.[2].email).toBe('customer3@example.com');
+      expect(result.data?.items).toHaveLength(3);
+      expect(result.data?.items?.[0].email).toBe('customer1@example.com');
+      expect(result.data?.items?.[1].email).toBe('customer2@example.com');
+      expect(result.data?.items?.[2].email).toBe('customer3@example.com');
 
       expect(mockClient.request).toHaveBeenCalledOnce();
       expect(mockClient.request).toHaveBeenCalledWith({
@@ -634,10 +639,15 @@ describe('CustomersService', () => {
 
     test('should handle empty customers list', async () => {
       // Arrange
-      const expectedResponse: BaseResponse<BaseCustomer[]> = {
+      const expectedResponse = {
         status: 'success',
         systemTime: 1640995200000,
-        data: [],
+        data: {
+          items: [],
+          totalCount: 0,
+          currentPage: 1,
+          pageCount: 0,
+        },
       };
 
       mockClient.request = vi.fn().mockResolvedValue(expectedResponse);
@@ -646,8 +656,8 @@ describe('CustomersService', () => {
       const result = await customersService.list();
 
       // Assert
-      expect(result.data).toEqual([]);
-      expect(result.data).toHaveLength(0);
+      expect(result.data?.items).toEqual([]);
+      expect(result.data?.items).toHaveLength(0);
     });
 
     test('should handle customers with full details', async () => {
@@ -676,10 +686,15 @@ describe('CustomersService', () => {
         },
       ];
 
-      const expectedResponse: BaseResponse<BaseCustomer[]> = {
+      const expectedResponse = {
         status: 'success',
         systemTime: 1640995200000,
-        data: mockCustomersData,
+        data: {
+          items: mockCustomersData,
+          totalCount: 1,
+          currentPage: 1,
+          pageCount: 1,
+        },
       };
 
       mockClient.request = vi.fn().mockResolvedValue(expectedResponse);
@@ -688,9 +703,9 @@ describe('CustomersService', () => {
       const result = await customersService.list();
 
       // Assert
-      expect(result.data).toHaveLength(1);
-      expect(result.data?.[0].billingAddress?.zipCode).toBe('34000');
-      expect(result.data?.[0].shippingAddress?.zipCode).toBe('06000');
+      expect(result.data?.items).toHaveLength(1);
+      expect(result.data?.items?.[0].billingAddress?.zipCode).toBe('34000');
+      expect(result.data?.items?.[0].shippingAddress?.zipCode).toBe('06000');
     });
 
     test('should handle API errors during list operation', async () => {
@@ -746,10 +761,15 @@ describe('CustomersService', () => {
         })
       );
 
-      const expectedResponse: BaseResponse<BaseCustomer[]> = {
+      const expectedResponse = {
         status: 'success',
         systemTime: 1640995200000,
-        data: largeCustomerList,
+        data: {
+          items: largeCustomerList,
+          totalCount: 100,
+          currentPage: 1,
+          pageCount: 10,
+        },
       };
 
       mockClient.request = vi.fn().mockResolvedValue(expectedResponse);
@@ -758,9 +778,9 @@ describe('CustomersService', () => {
       const result = await customersService.list();
 
       // Assert
-      expect(result.data).toHaveLength(100);
-      expect(result.data?.[0].email).toBe('customer0@example.com');
-      expect(result.data?.[99].email).toBe('customer99@example.com');
+      expect(result.data?.items).toHaveLength(100);
+      expect(result.data?.items?.[0].email).toBe('customer0@example.com');
+      expect(result.data?.items?.[99].email).toBe('customer99@example.com');
     });
 
     test('should handle service unavailable error (503)', async () => {

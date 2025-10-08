@@ -654,7 +654,12 @@ describe('ProductsService', () => {
       const expectedResponse = {
         status: 'success',
         systemTime: 1640995200000,
-        data: mockProductsData,
+        data: {
+          items: mockProductsData,
+          totalCount: 3,
+          currentPage: 1,
+          pageCount: 1,
+        },
       };
 
       mockClient.request = vi.fn().mockResolvedValue(expectedResponse);
@@ -664,11 +669,11 @@ describe('ProductsService', () => {
 
       // Assert
       expect(result).toEqual(expectedResponse);
-      expect(result.data).toHaveLength(3);
-      expect(result.data?.[0].referenceCode).toBe('PROD_001');
-      expect(result.data?.[1].referenceCode).toBe('PROD_002');
-      expect(result.data?.[2].referenceCode).toBe('PROD_003');
-      expect(result.data?.[2].status).toBe('INACTIVE');
+      expect(result.data?.items).toHaveLength(3);
+      expect(result.data?.items?.[0].referenceCode).toBe('PROD_001');
+      expect(result.data?.items?.[1].referenceCode).toBe('PROD_002');
+      expect(result.data?.items?.[2].referenceCode).toBe('PROD_003');
+      expect(result.data?.items?.[2].status).toBe('INACTIVE');
 
       expect(mockClient.request).toHaveBeenCalledOnce();
       expect(mockClient.request).toHaveBeenCalledWith({
@@ -682,7 +687,12 @@ describe('ProductsService', () => {
       const expectedResponse = {
         status: 'success',
         systemTime: 1640995200000,
-        data: [],
+        data: {
+          items: [],
+          totalCount: 0,
+          currentPage: 1,
+          pageCount: 0,
+        },
       };
 
       mockClient.request = vi.fn().mockResolvedValue(expectedResponse);
@@ -691,8 +701,8 @@ describe('ProductsService', () => {
       const result = await productsService.list();
 
       // Assert
-      expect(result.data).toEqual([]);
-      expect(result.data).toHaveLength(0);
+      expect(result.data?.items).toEqual([]);
+      expect(result.data?.items).toHaveLength(0);
     });
 
     test('should handle API errors during list operation', async () => {
@@ -773,7 +783,12 @@ describe('ProductsService', () => {
       const expectedResponse = {
         status: 'success',
         systemTime: 1640995200000,
-        data: mockProductsData,
+        data: {
+          items: mockProductsData,
+          totalCount: 1,
+          currentPage: 1,
+          pageCount: 1,
+        },
       };
 
       mockClient.request = vi.fn().mockResolvedValue(expectedResponse);
@@ -782,16 +797,16 @@ describe('ProductsService', () => {
       const result = await productsService.list();
 
       // Assert
-      expect(result.data).toHaveLength(1);
-      expect(result.data?.[0].pricingPlans).toHaveLength(2);
-      expect(result.data?.[0].pricingPlans[0].paymentInterval).toBe(
+      expect(result.data?.items).toHaveLength(1);
+      expect(result.data?.items?.[0].pricingPlans).toHaveLength(2);
+      expect(result.data?.items?.[0].pricingPlans[0].paymentInterval).toBe(
         PaymentInterval.MONTHLY
       );
-      expect(result.data?.[0].pricingPlans[1].paymentInterval).toBe(
+      expect(result.data?.items?.[0].pricingPlans[1].paymentInterval).toBe(
         PaymentInterval.YEARLY
       );
-      expect(result.data?.[0].pricingPlans[0].price).toBe(19.99);
-      expect(result.data?.[0].pricingPlans[1].price).toBe(199.99);
+      expect(result.data?.items?.[0].pricingPlans[0].price).toBe(19.99);
+      expect(result.data?.items?.[0].pricingPlans[1].price).toBe(199.99);
     });
   });
 
@@ -1157,7 +1172,12 @@ describe('ProductsService', () => {
         const expectedResponse = {
           status: 'success',
           systemTime: 1640995200000,
-          data: largeProductList,
+          data: {
+            items: largeProductList,
+            totalCount: 1000,
+            currentPage: 1,
+            pageCount: 100,
+          },
         };
 
         mockClient.request = vi.fn().mockResolvedValue(expectedResponse);
@@ -1166,14 +1186,14 @@ describe('ProductsService', () => {
         const result = await productsService.list();
 
         // Assert
-        expect(result.data).toHaveLength(1000);
-        expect(result.data?.[0].referenceCode).toBe('PROD_0000');
-        expect(result.data?.[999].referenceCode).toBe('PROD_0999');
-        expect(result.data?.filter((p) => p.status === 'ACTIVE')).toHaveLength(
-          500
-        );
+        expect(result.data?.items).toHaveLength(1000);
+        expect(result.data?.items?.[0].referenceCode).toBe('PROD_0000');
+        expect(result.data?.items?.[999].referenceCode).toBe('PROD_0999');
         expect(
-          result.data?.filter((p) => p.status === 'INACTIVE')
+          result.data?.items?.filter((p) => p.status === 'ACTIVE')
+        ).toHaveLength(500);
+        expect(
+          result.data?.items?.filter((p) => p.status === 'INACTIVE')
         ).toHaveLength(500);
       });
 
