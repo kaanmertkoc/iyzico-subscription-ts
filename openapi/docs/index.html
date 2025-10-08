@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Iyzico Subscription API Documentation</title>
+    <title>@kaanmertkoc/iyzico-subs-ts - SDK Documentation</title>
     <meta
       name="description"
-      content="Official API documentation for @kaanmertkoc/iyzico-subs-ts - TypeScript SDK for Iyzico's Subscription API"
+      content="Official SDK documentation for @kaanmertkoc/iyzico-subs-ts - TypeScript SDK for Iyzico Subscriptions. Learn how to use the SDK methods, not raw API calls."
     />
     <link
       rel="icon"
@@ -143,52 +143,57 @@
     </style>
   </head>
   <body>
-    <!-- Sandbox Warning Banner -->
-    <div class="sandbox-warning">
-      <h2>⚠️ CRITICAL: Sandbox Limitations</h2>
+    <!-- SDK Info Banner -->
+    <div class="sandbox-warning" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+      <h2>📘 SDK Documentation</h2>
       <p>
-        <strong
-          >Iyzico's sandbox environment does NOT support subscription
-          routes.</strong
-        >
+        <strong>You're viewing SDK method documentation, not raw API endpoints!</strong>
       </p>
       <p>
-        ✅ <strong>Works in Sandbox:</strong> Only
-        <code>/payment/bin/check</code> (BIN validation)
+        ✅ <strong>Use SDK methods like:</strong> <code>iyzico.products.create()</code>, <code>iyzico.subscriptions.list()</code>
       </p>
       <p>
-        ❌ <strong>NOT Available in Sandbox:</strong> ALL subscription routes
-        (<code>/v2/subscription/*</code>)
+        ❌ <strong>Don't call endpoints directly:</strong> The SDK handles <code>/v2/subscription/*</code> for you
+      </p>
+      <p style="margin-top: 1rem;">
+        ⚠️ <strong>Sandbox Limitation:</strong> Only <code>iyzico.health.checkBin()</code> works in sandbox. All subscription methods require production credentials.
       </p>
       <p>
         📚
         <a
           href="https://github.com/kaanmertkoc/iyzico-subscription-ts#-sandbox-limitations"
           target="_blank"
+          style="text-decoration: underline; font-weight: 600;"
           >Read full documentation →</a
         >
       </p>
     </div>
     <!-- Custom header -->
     <div class="custom-header">
-      <h1>🚀 Iyzico Subscription API</h1>
+      <h1>📘 @kaanmertkoc/iyzico-subs-ts</h1>
       <p>
-        Official TypeScript SDK Documentation - Cross-platform compatible, zero
-        dependencies
+        <strong>SDK Documentation</strong> - Learn how to use the TypeScript SDK methods (not raw API endpoints)
+      </p>
+      <p style="margin-top: 0.75rem; font-size: 0.95rem; opacity: 0.85;">
+        Cross-platform compatible · Zero dependencies · Full TypeScript support · Paginated responses
       </p>
       <div class="custom-header-links">
         <a
           href="https://github.com/kaanmertkoc/iyzico-subscription-ts"
           target="_blank"
-          >📦 GitHub</a
+          >📦 GitHub Repository</a
         >
         <a
           href="https://www.npmjs.com/package/@kaanmertkoc/iyzico-subs-ts"
           target="_blank"
-          >📚 NPM</a
+          >📚 NPM Package</a
+        >
+        <a
+          href="https://github.com/kaanmertkoc/iyzico-subscription-ts/tree/main/examples/hono-app"
+          target="_blank"
+          >💡 Example Hono App</a
         >
         <a href="./openapi.yaml" download>⬇️ Download OpenAPI Spec</a>
-        <a href="https://github.com/kaanmertkoc" target="_blank">👨‍💻 Author</a>
       </div>
     </div>
     <!-- Redoc container -->

@@ -1,44 +1,18 @@
 openapi: 3.0.3
 info:
-  title: Iyzico Subscription API
+  title: "@kaanmertkoc/iyzico-subs-ts - SDK Documentation"
   description: |
-    Official TypeScript SDK for Iyzico's Subscription API. This SDK provides a clean, type-safe interface for managing subscription products, pricing plans, subscriptions, and checkout flows.
+    # 📘 TypeScript SDK for Iyzico Subscriptions
     
-    ## ⚠️ CRITICAL: Sandbox Limitations
+    This is the **official SDK documentation** for `@kaanmertkoc/iyzico-subs-ts`. 
     
-    **Iyzico's sandbox environment does NOT support subscription routes.**
-    
-    ### ✅ Works in Sandbox:
-    - `POST /payment/bin/check` - Card BIN validation (Health Check)
-    
-    ### ❌ NOT Available in Sandbox:
-    - **ALL** subscription routes (`/v2/subscription/*`):
-      - Products endpoints
-      - Pricing plans endpoints
-      - Subscriptions endpoints
-      - Checkout form endpoints
-    
-    ### Testing Strategy:
-    
-    1. **Test credentials** with BIN check in sandbox
-    2. **Use production credentials** for subscription features
-    3. **Create test products** with small amounts in production
-    4. **Mock responses** for automated CI/CD tests
-    
-    **Error Response:** Sandbox returns `422` with error code `100001` ("Sistem hatası") for subscription routes.
-    
-    **Documentation:** https://github.com/kaanmertkoc/iyzico-subscription-ts#-sandbox-limitations
+    **Important:** You don't need to call these API endpoints directly! The SDK handles all API communication for you. This documentation shows the available methods and their parameters.
     
     ---
     
-    ## Features
-    - Full TypeScript support with comprehensive type definitions
-    - Cross-platform compatible (Node.js 18+, Bun, Deno, Browsers, Serverless)
-    - Zero dependencies
-    - Automatic HMAC-SHA256 authentication
-    - Comprehensive error handling with `IyzicoSandboxLimitationError`
+    ## 🚀 Quick Start
     
-    ## Installation
+    ### Installation
     ```bash
     npm install @kaanmertkoc/iyzico-subs-ts
     # or
@@ -47,7 +21,7 @@ info:
     yarn add @kaanmertkoc/iyzico-subs-ts
     ```
     
-    ## Quick Start (Production)
+    ### Initialize the Client
     ```typescript
     import { IyzicoClient } from '@kaanmertkoc/iyzico-subs-ts';
     
@@ -56,18 +30,122 @@ info:
       secretKey: process.env.IYZICO_SECRET_KEY,
       isSandbox: false  // Use production for subscriptions
     });
+    ```
     
+    ---
+    
+    ## 📦 Usage Examples
+    
+    ### Products
+    ```typescript
+    // Create a product
     const product = await iyzico.products.create({
       name: 'Premium Subscription',
       description: 'Monthly premium plan'
     });
+    
+    // List all products (paginated)
+    const products = await iyzico.products.list();
+    console.log(products.data.items); // Array of products
+    console.log(products.data.totalCount); // Total number
+    
+    // Retrieve a product
+    const product = await iyzico.products.retrieve('PROD_123');
+    
+    // Update a product
+    const updated = await iyzico.products.update('PROD_123', {
+      name: 'Updated Name',
+      description: 'Updated description'
+    });
+    
+    // Delete a product
+    await iyzico.products.delete('PROD_123');
     ```
     
-    ## Repository
-    - GitHub: https://github.com/kaanmertkoc/iyzico-subscription-ts
-    - NPM: https://www.npmjs.com/package/@kaanmertkoc/iyzico-subs-ts
+    ### Pricing Plans
+    ```typescript
+    // Create a plan
+    const plan = await iyzico.plans.create('PROD_123', {
+      name: 'Monthly Plan',
+      price: 29.99,
+      currencyCode: 'TRY',
+      paymentInterval: 'MONTHLY',
+      paymentIntervalCount: 1,
+      planPaymentType: 'RECURRING'
+    });
     
-  version: 1.0.1
+    // List plans for a product (paginated)
+    const plans = await iyzico.plans.list('PROD_123', 1, 10);
+    console.log(plans.data.items); // Array of plans
+    ```
+    
+    ### Subscriptions
+    ```typescript
+    // List subscriptions (paginated)
+    const subscriptions = await iyzico.subscriptions.list(1, 10);
+    console.log(subscriptions.data.items); // Array of subscriptions
+    
+    // Activate a subscription
+    await iyzico.subscriptions.activate('SUB_123');
+    
+    // Cancel a subscription
+    await iyzico.subscriptions.cancel('SUB_123');
+    ```
+    
+    ### Customers
+    ```typescript
+    // List customers (paginated)
+    const customers = await iyzico.customers.list();
+    console.log(customers.data.items); // Array of customers
+    
+    // Update a customer
+    await iyzico.customers.update('CUST_123', {
+      name: 'John',
+      surname: 'Doe',
+      email: 'john@example.com'
+    });
+    ```
+    
+    ---
+    
+    ## ⚠️ CRITICAL: Sandbox Limitations
+    
+    **Iyzico's sandbox does NOT support subscription endpoints!**
+    
+    - ✅ **Works in Sandbox:** `iyzico.health.checkBin()` only
+    - ❌ **NOT in Sandbox:** All other methods (products, plans, subscriptions, checkout)
+    
+    ### Testing Strategy:
+    1. Test credentials with BIN check in sandbox
+    2. **Use production credentials** for subscription features
+    3. Create test products with small amounts in production
+    4. Mock responses for automated tests
+    
+    **Error:** Sandbox returns `422` with error code `100001` for subscription methods.
+    
+    [Read full documentation →](https://github.com/kaanmertkoc/iyzico-subscription-ts#-sandbox-limitations)
+    
+    ---
+    
+    ## 🌟 Features
+    - ✅ Full TypeScript support with comprehensive type definitions
+    - ✅ Cross-platform: Node.js 18+, Bun, Deno, Browsers, Serverless
+    - ✅ Zero dependencies
+    - ✅ Automatic HMAC-SHA256 authentication
+    - ✅ Comprehensive error handling
+    - ✅ Paginated list responses with `items`, `totalCount`, `currentPage`, `pageCount`
+    
+    ## 🔗 Links
+    - [GitHub Repository](https://github.com/kaanmertkoc/iyzico-subscription-ts)
+    - [NPM Package](https://www.npmjs.com/package/@kaanmertkoc/iyzico-subs-ts)
+    - [Example Hono App](https://github.com/kaanmertkoc/iyzico-subscription-ts/tree/main/examples/hono-app)
+    
+    ---
+    
+    ## 📖 About This Documentation
+    
+    This OpenAPI specification documents the SDK methods you'll use. The endpoints shown are the underlying Iyzico API routes, but you'll interact with them through the SDK's clean interface (e.g., `iyzico.products.create()` instead of manually calling `/v2/subscription/products`).
+  version: 1.0.2
   contact:
     name: Kaan Mert Koç
     url: https://github.kaanmertkoc.com
@@ -88,38 +166,113 @@ security:
 tags:
   - name: Products
     description: |
-      Manage subscription products
+      **SDK Methods:** `iyzico.products.create()` · `list()` · `retrieve()` · `update()` · `delete()`
       
-      ⚠️ **NOT available in sandbox.** Use production credentials.
+      Create and manage subscription products. Products are containers for pricing plans.
+      
+      ```typescript
+      // Create a product
+      const product = await iyzico.products.create({
+        name: 'Premium Plan',
+        description: 'Monthly premium subscription'
+      });
+      
+      // List with pagination
+      const { data } = await iyzico.products.list();
+      data.items.forEach(product => console.log(product.name));
+      console.log(`Total: ${data.totalCount}`);
+      ```
   - name: Plans
     description: |
-      Manage pricing plans for products
+      **SDK Methods:** `iyzico.plans.create()` · `list()` · `retrieve()` · `update()` · `delete()`
       
-      ⚠️ **NOT available in sandbox.** Use production credentials.
+      Manage pricing plans for products. Define price, billing interval, and trial periods.
+      
+      ```typescript
+      // Create a pricing plan
+      const plan = await iyzico.plans.create('PROD_123', {
+        name: 'Monthly Plan',
+        price: 29.99,
+        currencyCode: 'TRY',
+        paymentInterval: 'MONTHLY',
+        paymentIntervalCount: 1,
+        planPaymentType: 'RECURRING',
+        trialPeriodDays: 7
+      });
+      ```
   - name: Subscriptions
     description: |
-      Manage customer subscriptions
+      **SDK Methods:** `iyzico.subscriptions.list()` · `retrieve()` · `activate()` · `cancel()` · `upgrade()` · `retry()`
       
-      ⚠️ **NOT available in sandbox.** Use production credentials.
+      Manage customer subscriptions lifecycle: activate, cancel, upgrade, and retry failed payments.
+      
+      ```typescript
+      // Activate a pending subscription
+      await iyzico.subscriptions.activate('SUB_123');
+      
+      // List with pagination
+      const { data } = await iyzico.subscriptions.list(1, 10);
+      console.log(`${data.items.length} of ${data.totalCount} subscriptions`);
+      ```
+  - name: Customers
+    description: |
+      **SDK Methods:** `iyzico.customers.list()` · `retrieve()` · `update()`
+      
+      Manage customer information, billing and shipping addresses.
+      
+      ```typescript
+      // List customers with pagination
+      const { data } = await iyzico.customers.list();
+      data.items.forEach(customer => {
+        console.log(`${customer.name} - ${customer.email}`);
+      });
+      ```
   - name: Checkout
     description: |
-      Initialize checkout forms and subscriptions
+      **SDK Methods:** `iyzico.checkout.initialize()` · `retrieve()` · `initializeSubscription()` · `initializeCardUpdate()`
       
-      ⚠️ **NOT available in sandbox.** Use production credentials.
+      Create checkout forms and initialize subscriptions with payment cards (3DS and non-3DS).
+      
+      ```typescript
+      // Initialize 3DS checkout form
+      const checkout = await iyzico.checkout.initialize({
+        pricingPlanReferenceCode: 'PLAN_123',
+        callbackUrl: 'https://yoursite.com/callback',
+        // ... customer details
+      });
+      ```
   - name: Health
     description: |
-      Utility endpoints for health checks and BIN validation
+      **SDK Method:** `iyzico.health.checkBin()`
       
-      ✅ **Works in both sandbox and production.**
+      Validate card BIN numbers and check API connectivity. ✅ **Works in sandbox!**
+      
+      ```typescript
+      // Check card BIN
+      const binInfo = await iyzico.health.checkBin('554960');
+      console.log(binInfo.data.bankName); // 'İş Bankası'
+      console.log(binInfo.data.cardType); // 'CREDIT_CARD'
+      ```
 
 paths:
   # ==================== PRODUCTS ====================
   /v2/subscription/products:
     get:
       tags: [Products]
-      summary: List all products
+      summary: "SDK: iyzico.products.list()"
       operationId: listProducts
-      description: Retrieves a list of all subscription products
+      description: |
+        Lists all subscription products with pagination support.
+        
+        **SDK Usage:**
+        ```typescript
+        const response = await iyzico.products.list();
+        
+        console.log(response.data.items);      // Array of products
+        console.log(response.data.totalCount); // Total count
+        console.log(response.data.currentPage); // Current page
+        console.log(response.data.pageCount);  // Total pages
+        ```
       responses:
         '200':
           description: Successful response
@@ -134,9 +287,18 @@ paths:
     
     post:
       tags: [Products]
-      summary: Create a product
+      summary: "SDK: iyzico.products.create()"
       operationId: createProduct
-      description: Creates a new subscription product
+      description: |
+        Creates a new subscription product.
+        
+        **SDK Usage:**
+        ```typescript
+        const product = await iyzico.products.create({
+          name: 'Premium Subscription',
+          description: 'Monthly premium plan'
+        });
+        ```
       requestBody:
         required: true
         content:
@@ -160,9 +322,15 @@ paths:
   /v2/subscription/products/{referenceCode}:
     get:
       tags: [Products]
-      summary: Retrieve a product
+      summary: "SDK: iyzico.products.retrieve()"
       operationId: retrieveProduct
-      description: Retrieves a specific product by its reference code
+      description: |
+        Retrieves a specific product by its reference code.
+        
+        **SDK Usage:**
+        ```typescript
+        const product = await iyzico.products.retrieve('PROD_123');
+        ```
       parameters:
         - $ref: '#/components/parameters/ReferenceCode'
       responses:
@@ -177,9 +345,18 @@ paths:
     
     post:
       tags: [Products]
-      summary: Update a product
+      summary: "SDK: iyzico.products.update()"
       operationId: updateProduct
-      description: Updates an existing product
+      description: |
+        Updates an existing product.
+        
+        **SDK Usage:**
+        ```typescript
+        const updated = await iyzico.products.update('PROD_123', {
+          name: 'Updated Premium',
+          description: 'Updated description'
+        });
+        ```
       parameters:
         - $ref: '#/components/parameters/ReferenceCode'
       requestBody:
@@ -202,9 +379,15 @@ paths:
     
     delete:
       tags: [Products]
-      summary: Delete a product
+      summary: "SDK: iyzico.products.delete()"
       operationId: deleteProduct
-      description: Deletes a product by its reference code
+      description: |
+        Deletes a product by its reference code.
+        
+        **SDK Usage:**
+        ```typescript
+        await iyzico.products.delete('PROD_123');
+        ```
       parameters:
         - $ref: '#/components/parameters/ReferenceCode'
       responses:
@@ -221,9 +404,18 @@ paths:
   /v2/subscription/products/{productReferenceCode}/pricing-plans:
     get:
       tags: [Plans]
-      summary: List pricing plans
+      summary: "SDK: iyzico.plans.list()"
       operationId: listPlans
-      description: Lists all pricing plans for a product with pagination
+      description: |
+        Lists all pricing plans for a product with pagination.
+        
+        **SDK Usage:**
+        ```typescript
+        const response = await iyzico.plans.list('PROD_123', 1, 10);
+        
+        console.log(response.data.items);      // Array of plans
+        console.log(response.data.totalCount); // Total count
+        ```
       parameters:
         - name: productReferenceCode
           in: path
@@ -256,9 +448,23 @@ paths:
     
     post:
       tags: [Plans]
-      summary: Create a pricing plan
+      summary: "SDK: iyzico.plans.create()"
       operationId: createPlan
-      description: Creates a new pricing plan for a product
+      description: |
+        Creates a new pricing plan for a product.
+        
+        **SDK Usage:**
+        ```typescript
+        const plan = await iyzico.plans.create('PROD_123', {
+          name: 'Monthly Plan',
+          price: 29.99,
+          currencyCode: 'TRY',
+          paymentInterval: 'MONTHLY',
+          paymentIntervalCount: 1,
+          planPaymentType: 'RECURRING',
+          trialPeriodDays: 7
+        });
+        ```
       parameters:
         - name: productReferenceCode
           in: path
@@ -344,8 +550,18 @@ paths:
   /v2/subscription/subscriptions:
     get:
       tags: [Subscriptions]
-      summary: List subscriptions
+      summary: "SDK: iyzico.subscriptions.list()"
       operationId: listSubscriptions
+      description: |
+        Lists all subscriptions with pagination.
+        
+        **SDK Usage:**
+        ```typescript
+        const response = await iyzico.subscriptions.list(1, 10);
+        
+        console.log(response.data.items);      // Array of subscriptions
+        console.log(response.data.totalCount); // Total count
+        ```
       parameters:
         - name: page
           in: query
@@ -792,9 +1008,18 @@ components:
         - type: object
           properties:
             data:
-              type: array
-              items:
-                $ref: '#/components/schemas/ProductData'
+              type: object
+              properties:
+                currentPage:
+                  type: integer
+                pageCount:
+                  type: integer
+                totalCount:
+                  type: integer
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ProductData'
 
     # ==================== PLAN SCHEMAS ====================
     PricingPlan:
@@ -949,9 +1174,18 @@ components:
         - type: object
           properties:
             data:
-              type: array
-              items:
-                $ref: '#/components/schemas/SubscriptionData'
+              type: object
+              properties:
+                currentPage:
+                  type: integer
+                pageCount:
+                  type: integer
+                totalCount:
+                  type: integer
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/SubscriptionData'
 
     # ==================== CHECKOUT SCHEMAS ====================
     InitializeCheckoutRequest:

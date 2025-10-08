@@ -33,6 +33,25 @@ pnpm add @kaanmertkoc/iyzico-subs-ts
 deno add @kaanmertkoc/iyzico-subs-ts
 ```
 
+### Environment Variables
+
+Create a `.env` file:
+
+```env
+# Production credentials
+IYZICO_API_KEY=your_production_api_key
+IYZICO_SECRET_KEY=your_production_secret_key
+IYZICO_ENVIRONMENT=production # production or sandbox  (default: production because of sandbox limitations)
+
+
+# Sandbox credentials (optional, only if using sandbox)
+IYZICO_SANDBOX_API_KEY=your_sandbox_api_key
+IYZICO_SANDBOX_SECRET_KEY=your_sandbox_secret_key
+
+# Environment
+NODE_ENV=development
+```
+
 ## 🔑 Quick Start
 
 ### Basic Usage (Node.js/Bun/Deno)
@@ -124,24 +143,6 @@ npm run docs:open
 
 For detailed usage examples across different platforms, refer to the cross-platform usage examples included in this README.
 
-### Environment Variables
-
-Create a `.env` file:
-
-```env
-# Production credentials
-IYZICO_API_KEY=your_production_api_key
-IYZICO_SECRET_KEY=your_production_secret_key
-IYZICO_ENVIRONMENT=production # production or sandbox  (default: production because of sandbox limitations)
-
-
-# Sandbox credentials (optional, only if using sandbox)
-IYZICO_SANDBOX_API_KEY=your_sandbox_api_key
-IYZICO_SANDBOX_SECRET_KEY=your_sandbox_secret_key
-
-# Environment
-NODE_ENV=development
-```
 
 ## 🏗️ API Reference
 
