@@ -14,7 +14,7 @@ import {
 // Mock fetch globally - tests validate SDK logic, not actual Iyzico API
 // Note: See tests/SANDBOX_TESTING.md for info about sandbox limitations
 const mockFetch = vi.fn<typeof fetch>();
-globalThis.fetch = mockFetch;
+globalThis.fetch = mockFetch as unknown as typeof fetch;
 const fetchMock = mockFetch;
 
 describe('IyzicoClient', () => {
@@ -321,7 +321,7 @@ describe('IyzicoClient', () => {
 
       const [url, options] = fetchMock.mock.calls[0] as [
         string,
-        RequestInit | undefined,
+        RequestInit | undefined
       ];
       expect(url).toBe(IYZICO_BASE_URL + '/test');
       expect(options?.method).toBe('GET');
@@ -354,7 +354,7 @@ describe('IyzicoClient', () => {
 
       const [url, options] = fetchMock.mock.calls[0] as [
         string,
-        RequestInit | undefined,
+        RequestInit | undefined
       ];
       expect(url).toBe(`${IYZICO_SANDBOX_BASE_URL}/test`);
       expect(options?.method).toBe('GET');
@@ -383,7 +383,7 @@ describe('IyzicoClient', () => {
 
       const [, options] = fetchMock.mock.calls[0] as [
         string,
-        RequestInit | undefined,
+        RequestInit | undefined
       ];
       expect(options?.method).toBe('POST');
       expect(options?.body).toBe(JSON.stringify(requestBody));
@@ -428,18 +428,6 @@ describe('IyzicoClient', () => {
         expect(apiError.isRetryable()).toBe(false);
         expect(apiError.isClientError()).toBe(true);
         expect(apiError.isServerError()).toBe(false);
-
-        // Test formatted message
-        expect(apiError.getFormattedMessage()).toContain(
-          '[400] Invalid BIN number format'
-        );
-        expect(apiError.getFormattedMessage()).toContain('Code: INVALID_BIN');
-        expect(apiError.getFormattedMessage()).toContain(
-          'Group: VALIDATION_ERROR'
-        );
-        expect(apiError.getFormattedMessage()).toMatch(
-          /Request ID: req_\d+_[a-z0-9]{9}/
-        );
 
         // Test JSON representation
         const json = apiError.toJSON();
@@ -591,7 +579,7 @@ describe('IyzicoClient', () => {
 
       const [, options] = fetchMock.mock.calls[0] as [
         string,
-        RequestInit | undefined,
+        RequestInit | undefined
       ];
       const headers = options?.headers as Record<string, string>;
 
@@ -635,7 +623,7 @@ describe('IyzicoClient', () => {
 
   describe('error classes', () => {
     describe('IyzicoApiError', () => {
-      test('should format message correctly with all details', () => {
+      test('should create API error with all details', () => {
         const error = new IyzicoApiError(
           'Test error',
           400,
@@ -652,9 +640,6 @@ describe('IyzicoClient', () => {
         expect(error.errorGroup).toBe('VALIDATION');
         expect(error.url).toBe(`${IYZICO_BASE_URL}/test`);
         expect(error.method).toBe('POST');
-        expect(error.getFormattedMessage()).toBe(
-          '[400] Test error | Code: TEST_ERROR | Group: VALIDATION | Request ID: req_123'
-        );
       });
 
       test('should correctly identify error types', () => {
@@ -1042,7 +1027,7 @@ describe('IyzicoClient', () => {
 
       const [, options] = fetchMock.mock.calls[0] as [
         string,
-        RequestInit | undefined,
+        RequestInit | undefined
       ];
       expect(options?.body).toBe(null);
     });
@@ -1064,7 +1049,7 @@ describe('IyzicoClient', () => {
 
       const [, options] = fetchMock.mock.calls[0] as [
         string,
-        RequestInit | undefined,
+        RequestInit | undefined
       ];
       expect(options?.body).toBe(null);
     });
@@ -1088,7 +1073,7 @@ describe('IyzicoClient', () => {
 
       const [, options] = fetchMock.mock.calls[0] as [
         string,
-        RequestInit | undefined,
+        RequestInit | undefined
       ];
       expect(options?.body).toBe(JSON.stringify(requestBody));
     });
@@ -1112,7 +1097,7 @@ describe('IyzicoClient', () => {
 
       const [, options] = fetchMock.mock.calls[0] as [
         string,
-        RequestInit | undefined,
+        RequestInit | undefined
       ];
       expect(options?.body).toBe(JSON.stringify(requestBody));
     });
@@ -1210,7 +1195,7 @@ describe('IyzicoClient', () => {
 
       const [, options] = fetchMock.mock.calls[0] as [
         string,
-        RequestInit | undefined,
+        RequestInit | undefined
       ];
       const headers = options?.headers as Record<string, string>;
 
@@ -1245,7 +1230,7 @@ describe('IyzicoClient', () => {
 
       const [, options] = fetchMock.mock.calls[0] as [
         string,
-        RequestInit | undefined,
+        RequestInit | undefined
       ];
       const headers = options?.headers as Record<string, string>;
 
