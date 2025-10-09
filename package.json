@@ -1,6 +1,6 @@
 {
   "name": "@kaanmertkoc/iyzico-subs-ts",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Modern TypeScript SDK for Iyzico Subscription API - Cross-platform compatible",
   "author": "Kaan Mert Koç <kaanmertkocbursa@gmail.com>",
   "license": "MIT",
