@@ -47,16 +47,6 @@ export const IYZICO_ERROR_MESSAGES: Record<string, string> = {
 };
 
 /**
- * Error severity levels for better error handling
- */
-export enum ErrorSeverity {
-  LOW = 'low',
-  MEDIUM = 'medium', 
-  HIGH = 'high',
-  CRITICAL = 'critical'
-}
-
-/**
  * Error categories for better organization
  */
 export enum ErrorCategory {
@@ -198,27 +188,6 @@ export class IyzicoApiError extends IyzicoError {
   }
 
   /**
-   * Returns a formatted error message with additional context
-   */
-  public getFormattedMessage(): string {
-    const parts = [`[${this.statusCode}] ${this.message}`];
-
-    if (this.errorCode) {
-      parts.push(`Code: ${this.errorCode}`);
-    }
-
-    if (this.errorGroup) {
-      parts.push(`Group: ${this.errorGroup}`);
-    }
-
-    if (this.requestId) {
-      parts.push(`Request ID: ${this.requestId}`);
-    }
-
-    return parts.join(' | ');
-  }
-
-  /**
    * Returns a user-friendly error message safe for end-users
    */
   public getUserFriendlyMessage(): string {
@@ -253,10 +222,16 @@ export class IyzicoApiError extends IyzicoError {
       return ErrorCategory.RATE_LIMIT;
     }
     if (this.statusCode >= 400 && this.statusCode < 500) {
-      if (this.errorCode?.includes('SUBSCRIPTION') || this.errorCode?.includes('PLAN')) {
+      if (
+        this.errorCode?.includes('SUBSCRIPTION') ||
+        this.errorCode?.includes('PLAN')
+      ) {
         return ErrorCategory.SUBSCRIPTION;
       }
-      if (this.errorCode?.includes('PAYMENT') || this.errorCode?.includes('CARD')) {
+      if (
+        this.errorCode?.includes('PAYMENT') ||
+        this.errorCode?.includes('CARD')
+      ) {
         return ErrorCategory.PAYMENT;
       }
       return ErrorCategory.VALIDATION;
@@ -265,25 +240,6 @@ export class IyzicoApiError extends IyzicoError {
       return ErrorCategory.SERVER;
     }
     return ErrorCategory.UNKNOWN;
-  }
-
-  /**
-   * Determines the severity level of the error
-   */
-  public getSeverity(): ErrorSeverity {
-    if (this.statusCode >= 500) {
-      return ErrorSeverity.HIGH;
-    }
-    if (this.statusCode === 429) {
-      return ErrorSeverity.MEDIUM;
-    }
-    if (this.statusCode === 401 || this.statusCode === 403) {
-      return ErrorSeverity.HIGH;
-    }
-    if (this.errorCode?.includes('FRAUD') || this.errorCode?.includes('SECURITY')) {
-      return ErrorSeverity.CRITICAL;
-    }
-    return ErrorSeverity.LOW;
   }
 
   /**
@@ -334,7 +290,9 @@ export class IyzicoApiError extends IyzicoError {
     if (this.isBusinessConstraintError()) {
       if (operation === 'delete' || this.method === 'DELETE') {
         const resource = operation || 'resource';
-        return `Cannot delete ${resource}${resourceId ? ` '${resourceId}'` : ''}. This may be due to: active subscriptions using it, plan status restrictions, or other business rules.`;
+        return `Cannot delete ${resource}${
+          resourceId ? ` '${resourceId}'` : ''
+        }. This may be due to: active subscriptions using it, plan status restrictions, or other business rules.`;
       }
       return 'Operation failed due to business constraints. Check if the resource is in use or has dependencies.';
     }
@@ -360,7 +318,9 @@ export class IyzicoApiError extends IyzicoError {
     }
 
     if (this.isNotFoundError()) {
-      return `Verify the ${operation || 'resource'} ID is correct and the resource exists.`;
+      return `Verify the ${
+        operation || 'resource'
+      } ID is correct and the resource exists.`;
     }
 
     if (this.statusCode === 401 || this.statusCode === 403) {
@@ -391,7 +351,6 @@ export class IyzicoApiError extends IyzicoError {
       isServerError: this.isServerError(),
       userFriendlyMessage: this.getUserFriendlyMessage(),
       category: this.getCategory(),
-      severity: this.getSeverity(),
     };
   }
 }
@@ -527,176 +486,6 @@ export class IyzicoConfigError extends IyzicoError {
     return {
       ...super.toJSON(),
       configField: this.configField,
-    };
-  }
-}
-
-/**
- * Utility functions for error handling
- */
-export class IyzicoErrorUtils {
-  /**
-   * Checks if an error is a specific type of Iyzico error
-   */
-  static isIyzicoError(error: unknown): error is IyzicoError {
-    return error instanceof IyzicoError;
-  }
-
-  /**
-   * Checks if an error is an API error
-   */
-  static isApiError(error: unknown): error is IyzicoApiError {
-    return error instanceof IyzicoApiError;
-  }
-
-  /**
-   * Checks if an error is a network error
-   */
-  static isNetworkError(error: unknown): error is IyzicoNetworkError {
-    return error instanceof IyzicoNetworkError;
-  }
-
-  /**
-   * Checks if an error is a configuration error
-   */
-  static isConfigError(error: unknown): error is IyzicoConfigError {
-    return error instanceof IyzicoConfigError;
-  }
-
-  /**
-   * Checks if error is a business constraint violation
-   */
-  static isBusinessConstraintError(error: unknown): error is IyzicoApiError {
-    return error instanceof IyzicoApiError && error.isBusinessConstraintError();
-  }
-
-  /**
-   * Checks if error is a real "not found" error
-   */
-  static isNotFoundError(error: unknown): error is IyzicoApiError {
-    return error instanceof IyzicoApiError && error.isNotFoundError();
-  }
-
-  /**
-   * Gets contextual error message with operation context
-   */
-  static getContextualMessage(error: unknown, operation?: string, resourceId?: string): string {
-    if (error instanceof IyzicoApiError) {
-      return error.getContextualMessage(operation, resourceId);
-    }
-    return IyzicoErrorUtils.getUserFriendlyMessage(error);
-  }
-
-  /**
-   * Gets actionable suggestion for any error
-   */
-  static getSuggestion(error: unknown, operation?: string): string {
-    if (error instanceof IyzicoApiError) {
-      return error.getSuggestion(operation);
-    }
-    return 'An unexpected error occurred. Please try again later.';
-  }
-
-  /**
-   * Gets a user-friendly message from any error type
-   */
-  static getUserFriendlyMessage(error: unknown): string {
-    if (error instanceof IyzicoApiError) {
-      return error.getUserFriendlyMessage();
-    }
-    if (error instanceof IyzicoNetworkError) {
-      return error.isTimeout
-        ? 'Request timed out. Please try again.'
-        : 'Network error occurred. Please check your connection and try again.';
-    }
-    if (error instanceof IyzicoConfigError) {
-      return 'Service configuration error. Please contact support.';
-    }
-    if (error instanceof IyzicoError) {
-      return 'An error occurred while processing your request.';
-    }
-    if (error instanceof Error) {
-      return 'An unexpected error occurred. Please try again later.';
-    }
-    return 'An unknown error occurred.';
-  }
-
-  /**
-   * Determines if an error should be retried
-   */
-  static isRetryable(error: unknown): boolean {
-    if (error instanceof IyzicoApiError) {
-      return error.isRetryable();
-    }
-    if (error instanceof IyzicoNetworkError) {
-      return true; // Network errors are generally retryable
-    }
-    return false; // Config errors and others are not retryable
-  }
-
-  /**
-   * Gets the error category for any error
-   */
-  static getErrorCategory(error: unknown): ErrorCategory {
-    if (error instanceof IyzicoApiError) {
-      return error.getCategory();
-    }
-    if (error instanceof IyzicoNetworkError) {
-      return ErrorCategory.NETWORK;
-    }
-    if (error instanceof IyzicoConfigError) {
-      return ErrorCategory.CONFIGURATION;
-    }
-    return ErrorCategory.UNKNOWN;
-  }
-
-  /**
-   * Gets the error severity for any error
-   */
-  static getErrorSeverity(error: unknown): ErrorSeverity {
-    if (error instanceof IyzicoApiError) {
-      return error.getSeverity();
-    }
-    if (error instanceof IyzicoNetworkError) {
-      return error.isTimeout ? ErrorSeverity.MEDIUM : ErrorSeverity.HIGH;
-    }
-    if (error instanceof IyzicoConfigError) {
-      return ErrorSeverity.CRITICAL;
-    }
-    return ErrorSeverity.MEDIUM;
-  }
-
-  /**
-   * Formats any error for logging with sensitive data removed
-   */
-  static formatForLogging(error: unknown): Record<string, unknown> {
-    if (error instanceof IyzicoError) {
-      const errorData = error.toJSON();
-      if (
-        'responseData' in errorData &&
-        typeof errorData.responseData === 'object'
-      ) {
-        const responseData = errorData.responseData as Record<string, unknown>;
-        const sanitized = { ...responseData };
-        delete sanitized.authToken;
-        delete sanitized.apiKey;
-        delete sanitized.secretKey;
-        delete sanitized.cardNumber;
-        delete sanitized.cvv;
-        errorData.responseData = sanitized;
-      }
-      return errorData;
-    }
-    if (error instanceof Error) {
-      return {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-      };
-    }
-    return {
-      error: String(error),
-      type: typeof error,
     };
   }
 }
