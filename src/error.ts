@@ -5,63 +5,45 @@ import type { IyzicoOptions, AuthManagerConfig } from './types';
  * These messages are safe to display to end users
  */
 export const IYZICO_ERROR_MESSAGES: Record<string, string> = {
-  // Card/Payment Errors
-  INVALID_BIN: 'Invalid card number format',
-  INVALID_CARD: 'Invalid card information',
-  INSUFFICIENT_FUNDS: 'Insufficient funds',
-  EXPIRED_CARD: 'Card has expired',
-  INVALID_CVV: 'Invalid security code',
-  CARD_NOT_ENROLLED: 'Card not enrolled for online payments',
-  AUTHENTICATION_FAILED: 'Authentication failed',
-  LIMIT_EXCEEDED: 'Transaction limit exceeded',
-  FRAUD_SUSPECTED: 'Transaction declined for security reasons',
-  
-  // Merchant/Account Errors
-  INVALID_MERCHANT: 'Invalid merchant configuration',
-  MERCHANT_NOT_ACTIVE: 'Merchant account is not active',
-  INSUFFICIENT_MERCHANT_BALANCE: 'Insufficient merchant balance',
-  
-  // Transaction Errors
-  INVALID_TRANSACTION: 'Invalid transaction',
-  DUPLICATE_TRANSACTION: 'Duplicate transaction detected',
-  TRANSACTION_NOT_FOUND: 'Transaction not found',
-  TRANSACTION_ALREADY_APPROVED: 'Transaction already approved',
-  TRANSACTION_CANCELLED: 'Transaction was cancelled',
-  
-  // Subscription-Specific Errors
-  SUBSCRIPTION_NOT_FOUND: 'Subscription not found',
-  SUBSCRIPTION_ALREADY_CANCELLED: 'Subscription is already cancelled',
-  SUBSCRIPTION_ALREADY_ACTIVE: 'Subscription is already active',
-  PLAN_NOT_FOUND: 'Subscription plan not found',
-  PLAN_NOT_ACTIVE: 'Subscription plan is not active',
-  CUSTOMER_NOT_FOUND: 'Customer not found',
-  CUSTOMER_ALREADY_EXISTS: 'Customer already exists',
-  INVALID_SUBSCRIPTION_STATE: 'Invalid subscription state for this operation',
-  BILLING_CYCLE_ERROR: 'Error processing billing cycle',
-  PAYMENT_METHOD_REQUIRED: 'Valid payment method required',
-  PAYMENT_METHOD_EXPIRED: 'Payment method has expired',
-  
-  // Product Errors
-  PRODUCT_NOT_FOUND: 'Product not found',
-  PRODUCT_NOT_ACTIVE: 'Product is not active',
-  INVALID_PRODUCT_TYPE: 'Invalid product type',
-  
-  // Validation Errors
-  INVALID_REQUEST: 'Invalid request data',
-  MISSING_REQUIRED_FIELD: 'Required field is missing',
-  INVALID_FIELD_FORMAT: 'Invalid field format',
-  INVALID_AMOUNT: 'Invalid amount specified',
-  INVALID_CURRENCY: 'Invalid currency code',
-  INVALID_EMAIL: 'Invalid email address',
-  INVALID_PHONE: 'Invalid phone number',
-  
-  // Rate Limiting
-  RATE_LIMIT_EXCEEDED: 'Too many requests. Please try again later.',
-  
-  // Generic fallbacks
-  INTERNAL_ERROR: 'An internal error occurred',
-  SERVICE_UNAVAILABLE: 'Service temporarily unavailable',
-  MAINTENANCE_MODE: 'Service is under maintenance',
+  // General Errors (1-27)
+  '1': 'System error occurred',
+  '2': 'System error occurred',
+  '3': 'Email is required',
+  '4': 'Email must not exceed 100 characters',
+  '5': 'Email format is invalid',
+  '8': 'Identity number is required',
+  '9': 'Identity number must not exceed 50 characters',
+  '10': 'Identity number must be at least 5 characters',
+  '11': 'Invalid request',
+  '12': 'Card number is invalid',
+  '13': 'Expiry month is invalid',
+  '14': 'Expiry year is invalid',
+  '15': 'CVC is invalid',
+  '16': 'Card holder name is required',
+  '19': 'Card holder name must not exceed 100 characters',
+  '20': 'Conversation ID must not exceed 255 characters',
+  '21': 'Card alias must not exceed 293 characters',
+  '22': 'IP must not exceed 50 characters',
+  '23': 'Callback URL is required',
+  '25': 'GSM number is required',
+  '26': 'GSM number must not exceed 25 characters',
+  '27': 'Invalid phone number format',
+
+  // Authentication Errors (1000-1009)
+  '1000': 'Invalid signature - check your API credentials',
+  '1001': 'API credentials not found - verify environment (sandbox vs production)',
+  '1002': 'Merchant not found - check API key',
+  '1003': 'Authorization error - check API and secret key',
+  '1004': 'Random string is required in headers',
+  '1006': 'API key is required',
+  '1007': 'Signature is required',
+  '1008': 'Authorization header prefix not found',
+  '1009': 'Authorization header string is required',
+
+  // Validation Errors (5000+)
+  '5001': 'Payment transaction ID is required',
+  '5002': 'Payment ID is required',
+  '5111': 'Card user key must be sent with card token',
 };
 
 /**
@@ -327,6 +309,72 @@ export class IyzicoApiError extends IyzicoError {
   }
 
   /**
+   * Check if this is a business constraint violation (not a real 404)
+   * Iyzico returns 404 + errorCode "1" when business rules prevent the operation
+   */
+  public isBusinessConstraintError(): boolean {
+    return this.statusCode === 404 && this.errorCode === '1';
+  }
+
+  /**
+   * Check if error is a real "not found" error (resource doesn't exist)
+   * vs a business constraint violation
+   */
+  public isNotFoundError(): boolean {
+    // Real 404s typically have specific error messages or no errorCode
+    // Business constraint 404s have errorCode "1"
+    return this.statusCode === 404 && this.errorCode !== '1';
+  }
+
+  /**
+   * Get operation-specific error message with actionable context
+   */
+  public getContextualMessage(operation?: string, resourceId?: string): string {
+    // Business constraint violation (404 + code "1")
+    if (this.isBusinessConstraintError()) {
+      if (operation === 'delete' || this.method === 'DELETE') {
+        const resource = operation || 'resource';
+        return `Cannot delete ${resource}${resourceId ? ` '${resourceId}'` : ''}. This may be due to: active subscriptions using it, plan status restrictions, or other business rules.`;
+      }
+      return 'Operation failed due to business constraints. Check if the resource is in use or has dependencies.';
+    }
+
+    // Real 404 - resource doesn't exist
+    if (this.isNotFoundError()) {
+      return `Resource not found. Verify the ID is correct.`;
+    }
+
+    // Fall back to standard message
+    return this.getUserFriendlyMessage();
+  }
+
+  /**
+   * Get actionable suggestions based on error type and operation
+   */
+  public getSuggestion(operation?: string): string {
+    if (this.isBusinessConstraintError()) {
+      if (operation === 'delete' || this.method === 'DELETE') {
+        return 'Check for active subscriptions using this plan. You may need to cancel subscriptions or update them to use a different plan before deletion.';
+      }
+      return 'Verify the resource state and check for dependencies or active usage.';
+    }
+
+    if (this.isNotFoundError()) {
+      return `Verify the ${operation || 'resource'} ID is correct and the resource exists.`;
+    }
+
+    if (this.statusCode === 401 || this.statusCode === 403) {
+      return 'Check your API credentials and permissions.';
+    }
+
+    if (this.isRetryable()) {
+      return 'This error is temporary. Wait a moment and try again.';
+    }
+
+    return 'Check the error details and your request parameters.';
+  }
+
+  /**
    * Returns a JSON representation of the error with all details
    */
   public toJSON(): Record<string, unknown> {
@@ -513,6 +561,40 @@ export class IyzicoErrorUtils {
    */
   static isConfigError(error: unknown): error is IyzicoConfigError {
     return error instanceof IyzicoConfigError;
+  }
+
+  /**
+   * Checks if error is a business constraint violation
+   */
+  static isBusinessConstraintError(error: unknown): error is IyzicoApiError {
+    return error instanceof IyzicoApiError && error.isBusinessConstraintError();
+  }
+
+  /**
+   * Checks if error is a real "not found" error
+   */
+  static isNotFoundError(error: unknown): error is IyzicoApiError {
+    return error instanceof IyzicoApiError && error.isNotFoundError();
+  }
+
+  /**
+   * Gets contextual error message with operation context
+   */
+  static getContextualMessage(error: unknown, operation?: string, resourceId?: string): string {
+    if (error instanceof IyzicoApiError) {
+      return error.getContextualMessage(operation, resourceId);
+    }
+    return IyzicoErrorUtils.getUserFriendlyMessage(error);
+  }
+
+  /**
+   * Gets actionable suggestion for any error
+   */
+  static getSuggestion(error: unknown, operation?: string): string {
+    if (error instanceof IyzicoApiError) {
+      return error.getSuggestion(operation);
+    }
+    return 'An unexpected error occurred. Please try again later.';
   }
 
   /**

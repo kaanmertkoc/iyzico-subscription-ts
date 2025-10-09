@@ -97,14 +97,13 @@ describe('IyzicoApiError', () => {
   });
 
   test('should return user-friendly message for known error codes', () => {
-    const error = new IyzicoApiError(
-      'API error occurred',
-      400,
-      mockResponseData
-    );
+    const errorWithNumericCode = new IyzicoApiError('API error occurred', 400, {
+      errorCode: '1',
+      errorMessage: 'System error',
+    });
 
-    const userMessage = error.getUserFriendlyMessage();
-    expect(userMessage).toBe('Invalid card information');
+    const userMessage = errorWithNumericCode.getUserFriendlyMessage();
+    expect(userMessage).toBe('System error occurred');
   });
 
   test('should return generic message for unknown error codes', () => {
@@ -125,94 +124,74 @@ describe('IyzicoApiError', () => {
   });
 
   test('should return server error message for 5xx status codes', () => {
-    const error = new IyzicoApiError(
-      'Server error',
-      500,
-      { status: 'failure', errorMessage: 'Internal server error' }
-    );
+    const error = new IyzicoApiError('Server error', 500, {
+      status: 'failure',
+      errorMessage: 'Internal server error',
+    });
 
     const userMessage = error.getUserFriendlyMessage();
-    expect(userMessage).toBe('Service temporarily unavailable. Please try again later.');
+    expect(userMessage).toBe(
+      'Service temporarily unavailable. Please try again later.'
+    );
   });
 
   test('should return rate limit message for 429 status code', () => {
-    const error = new IyzicoApiError(
-      'Rate limited',
-      429,
-      { status: 'failure', errorMessage: 'Too many requests' }
-    );
+    const error = new IyzicoApiError('Rate limited', 429, {
+      status: 'failure',
+      errorMessage: 'Too many requests',
+    });
 
     const userMessage = error.getUserFriendlyMessage();
-    expect(userMessage).toBe('Too many requests. Please try again in a few moments.');
+    expect(userMessage).toBe(
+      'Too many requests. Please try again in a few moments.'
+    );
   });
 
   describe('error categorization', () => {
     test('should categorize authentication errors', () => {
-      const error = new IyzicoApiError(
-        'Auth failed',
-        401,
-        { errorCode: 'AUTH_FAILED' }
-      );
+      const error = new IyzicoApiError('Auth failed', 401, {
+        errorCode: 'AUTH_FAILED',
+      });
 
       expect(error.getCategory()).toBe(ErrorCategory.AUTHENTICATION);
     });
 
     test('should categorize authorization errors', () => {
-      const error = new IyzicoApiError(
-        'Forbidden',
-        403,
-        {}
-      );
+      const error = new IyzicoApiError('Forbidden', 403, {});
 
       expect(error.getCategory()).toBe(ErrorCategory.AUTHORIZATION);
     });
 
     test('should categorize rate limit errors', () => {
-      const error = new IyzicoApiError(
-        'Rate limited',
-        429,
-        {}
-      );
+      const error = new IyzicoApiError('Rate limited', 429, {});
 
       expect(error.getCategory()).toBe(ErrorCategory.RATE_LIMIT);
     });
 
     test('should categorize subscription errors', () => {
-      const error = new IyzicoApiError(
-        'Subscription error',
-        400,
-        { errorCode: 'SUBSCRIPTION_NOT_FOUND' }
-      );
+      const error = new IyzicoApiError('Subscription error', 400, {
+        errorCode: 'SUBSCRIPTION_NOT_FOUND',
+      });
 
       expect(error.getCategory()).toBe(ErrorCategory.SUBSCRIPTION);
     });
 
     test('should categorize payment errors', () => {
-      const error = new IyzicoApiError(
-        'Payment error',
-        400,
-        { errorCode: 'PAYMENT_FAILED' }
-      );
+      const error = new IyzicoApiError('Payment error', 400, {
+        errorCode: 'PAYMENT_FAILED',
+      });
 
       expect(error.getCategory()).toBe(ErrorCategory.PAYMENT);
     });
 
     test('should categorize server errors', () => {
-      const error = new IyzicoApiError(
-        'Server error',
-        500,
-        {}
-      );
+      const error = new IyzicoApiError('Server error', 500, {});
 
       expect(error.getCategory()).toBe(ErrorCategory.SERVER);
     });
 
     test('should categorize validation errors as default', () => {
-      const error = new IyzicoApiError(
-        'Validation error',
-        400,
-        {}
-      );
+      const error = new IyzicoApiError('Validation error', 400, {});
 
       expect(error.getCategory()).toBe(ErrorCategory.VALIDATION);
     });
@@ -220,51 +199,33 @@ describe('IyzicoApiError', () => {
 
   describe('error severity', () => {
     test('should assign high severity to server errors', () => {
-      const error = new IyzicoApiError(
-        'Server error',
-        500,
-        {}
-      );
+      const error = new IyzicoApiError('Server error', 500, {});
 
       expect(error.getSeverity()).toBe(ErrorSeverity.HIGH);
     });
 
     test('should assign medium severity to rate limit errors', () => {
-      const error = new IyzicoApiError(
-        'Rate limited',
-        429,
-        {}
-      );
+      const error = new IyzicoApiError('Rate limited', 429, {});
 
       expect(error.getSeverity()).toBe(ErrorSeverity.MEDIUM);
     });
 
     test('should assign high severity to auth errors', () => {
-      const error = new IyzicoApiError(
-        'Unauthorized',
-        401,
-        {}
-      );
+      const error = new IyzicoApiError('Unauthorized', 401, {});
 
       expect(error.getSeverity()).toBe(ErrorSeverity.HIGH);
     });
 
     test('should assign critical severity to fraud errors', () => {
-      const error = new IyzicoApiError(
-        'Fraud detected',
-        400,
-        { errorCode: 'FRAUD_SUSPECTED' }
-      );
+      const error = new IyzicoApiError('Fraud detected', 400, {
+        errorCode: 'FRAUD_SUSPECTED',
+      });
 
       expect(error.getSeverity()).toBe(ErrorSeverity.CRITICAL);
     });
 
     test('should assign low severity to validation errors', () => {
-      const error = new IyzicoApiError(
-        'Validation error',
-        400,
-        {}
-      );
+      const error = new IyzicoApiError('Validation error', 400, {});
 
       expect(error.getSeverity()).toBe(ErrorSeverity.LOW);
     });
@@ -302,7 +263,11 @@ describe('IyzicoApiError', () => {
     const error = new IyzicoApiError(
       'API error',
       400,
-      mockResponseData,
+      {
+        errorCode: '11',
+        errorMessage: 'Invalid request',
+        errorGroup: 'VALIDATION',
+      },
       'req_12345',
       {
         url: 'https://api.iyzipay.com/v2/test',
@@ -317,16 +282,20 @@ describe('IyzicoApiError', () => {
       requestId: 'req_12345',
       stack: expect.any(String),
       statusCode: 400,
-      errorCode: 'INVALID_CARD',
-      errorGroup: 'PAYMENT_ERROR',
-      responseData: mockResponseData,
+      errorCode: '11',
+      errorGroup: 'VALIDATION',
+      responseData: {
+        errorCode: '11',
+        errorMessage: 'Invalid request',
+        errorGroup: 'VALIDATION',
+      },
       url: 'https://api.iyzipay.com/v2/test',
       method: 'POST',
       isRetryable: false,
       isClientError: true,
       isServerError: false,
-      userFriendlyMessage: 'Invalid card information',
-      category: ErrorCategory.PAYMENT,
+      userFriendlyMessage: 'Invalid request',
+      category: ErrorCategory.VALIDATION,
       severity: ErrorSeverity.LOW,
     });
   });
@@ -359,21 +328,14 @@ describe('IyzicoNetworkError', () => {
   test('should detect AbortError as timeout', () => {
     const abortError = new Error('Request aborted');
     abortError.name = 'AbortError';
-    const error = new IyzicoNetworkError(
-      'Request was aborted',
-      abortError
-    );
+    const error = new IyzicoNetworkError('Request was aborted', abortError);
 
     expect(error.isTimeout).toBe(true);
   });
 
   test('should create proper JSON representation', () => {
     const cause = new Error('Network failed');
-    const error = new IyzicoNetworkError(
-      'Network error',
-      cause,
-      'req_12345'
-    );
+    const error = new IyzicoNetworkError('Network error', cause, 'req_12345');
 
     const json = error.toJSON();
     expect(json).toEqual({
@@ -398,7 +360,9 @@ describe('IyzicoSandboxLimitationError', () => {
     );
 
     expect(error.name).toBe('IyzicoSandboxLimitationError');
-    expect(error.message).toBe('Sandbox environment does not support: /v2/subscription/products');
+    expect(error.message).toBe(
+      'Sandbox environment does not support: /v2/subscription/products'
+    );
     expect(error.statusCode).toBe(422);
     expect(error.errorCode).toBe('100001');
     expect(error.errorGroup).toBe('SANDBOX_LIMITATION');
@@ -408,7 +372,7 @@ describe('IyzicoSandboxLimitationError', () => {
   test('should return helpful user-friendly message', () => {
     const error = new IyzicoSandboxLimitationError('/v2/subscription/products');
     const message = error.getUserFriendlyMessage();
-    
+
     expect(message).toContain('sandbox does not support subscription routes');
     expect(message).toContain('production credentials');
     expect(message).toContain('health check');
@@ -437,7 +401,7 @@ describe('IyzicoSandboxLimitationError', () => {
   test('should provide actionable suggestion', () => {
     const error = new IyzicoSandboxLimitationError('/v2/subscription/products');
     const suggestion = error.getSuggestion();
-    
+
     expect(suggestion).toContain('production credentials');
     expect(suggestion).toContain('isSandbox: false');
     expect(suggestion).toContain('https://github.com');
@@ -446,8 +410,10 @@ describe('IyzicoSandboxLimitationError', () => {
   test('should include documentation link in user-friendly message', () => {
     const error = new IyzicoSandboxLimitationError('/v2/subscription/products');
     const message = error.getUserFriendlyMessage();
-    
-    expect(message).toContain('https://github.com/kaanmertkoc/iyzico-subscription-ts');
+
+    expect(message).toContain(
+      'https://github.com/kaanmertkoc/iyzico-subscription-ts'
+    );
   });
 });
 
@@ -486,11 +452,7 @@ describe('isSandboxLimitationError helper', () => {
       errorMessage: 'Sistem hatası',
     };
 
-    const apiError = new IyzicoApiError(
-      'Sistem hatası',
-      422,
-      responseData
-    );
+    const apiError = new IyzicoApiError('Sistem hatası', 422, responseData);
 
     const isSandbox = isSandboxLimitationError(
       apiError,
@@ -574,7 +536,7 @@ describe('isSandboxLimitationError helper', () => {
 
   test('should handle non-API errors gracefully', () => {
     const networkError = new IyzicoNetworkError('Network failed');
-    
+
     const isSandbox = isSandboxLimitationError(
       networkError,
       true,
@@ -591,11 +553,7 @@ describe('isSandboxLimitationError helper', () => {
       errorMessage: 'Sistem hatası',
     };
 
-    const apiError = new IyzicoApiError(
-      'Sistem hatası',
-      422,
-      responseData
-    );
+    const apiError = new IyzicoApiError('Sistem hatası', 422, responseData);
 
     const isSandbox = isSandboxLimitationError(
       apiError,
@@ -609,10 +567,7 @@ describe('isSandboxLimitationError helper', () => {
 
 describe('IyzicoConfigError', () => {
   test('should create config error', () => {
-    const error = new IyzicoConfigError(
-      'Invalid API key',
-      'apiKey'
-    );
+    const error = new IyzicoConfigError('Invalid API key', 'apiKey');
 
     expect(error.message).toBe('Invalid API key');
     expect(error.configField).toBe('apiKey');
@@ -626,10 +581,7 @@ describe('IyzicoConfigError', () => {
   });
 
   test('should create proper JSON representation', () => {
-    const error = new IyzicoConfigError(
-      'Invalid timeout',
-      'timeout'
-    );
+    const error = new IyzicoConfigError('Invalid timeout', 'timeout');
 
     const json = error.toJSON();
     expect(json).toEqual({
@@ -692,27 +644,40 @@ describe('IyzicoErrorUtils', () => {
 
   describe('getUserFriendlyMessage', () => {
     test('should get user-friendly message from API error', () => {
-      const apiError = new IyzicoApiError('test', 400, { errorCode: 'INVALID_CARD' });
+      const apiError = new IyzicoApiError('test', 400, {
+        errorCode: '11',
+        errorMessage: 'Invalid request',
+      });
       const message = IyzicoErrorUtils.getUserFriendlyMessage(apiError);
-      expect(message).toBe('Invalid card information');
+      expect(message).toBe('Invalid request');
     });
 
     test('should get user-friendly message from network timeout error', () => {
-      const networkError = new IyzicoNetworkError('timeout', new Error('timeout'));
+      const networkError = new IyzicoNetworkError(
+        'timeout',
+        new Error('timeout')
+      );
       const message = IyzicoErrorUtils.getUserFriendlyMessage(networkError);
       expect(message).toBe('Request timed out. Please try again.');
     });
 
     test('should get user-friendly message from network error', () => {
-      const networkError = new IyzicoNetworkError('network failed', new Error('failed'));
+      const networkError = new IyzicoNetworkError(
+        'network failed',
+        new Error('failed')
+      );
       const message = IyzicoErrorUtils.getUserFriendlyMessage(networkError);
-      expect(message).toBe('Network error occurred. Please check your connection and try again.');
+      expect(message).toBe(
+        'Network error occurred. Please check your connection and try again.'
+      );
     });
 
     test('should get user-friendly message from config error', () => {
       const configError = new IyzicoConfigError('invalid config');
       const message = IyzicoErrorUtils.getUserFriendlyMessage(configError);
-      expect(message).toBe('Service configuration error. Please contact support.');
+      expect(message).toBe(
+        'Service configuration error. Please contact support.'
+      );
     });
 
     test('should get user-friendly message from generic Iyzico error', () => {
@@ -724,7 +689,9 @@ describe('IyzicoErrorUtils', () => {
     test('should get user-friendly message from regular error', () => {
       const error = new Error('test');
       const message = IyzicoErrorUtils.getUserFriendlyMessage(error);
-      expect(message).toBe('An unexpected error occurred. Please try again later.');
+      expect(message).toBe(
+        'An unexpected error occurred. Please try again later.'
+      );
     });
 
     test('should handle unknown error types', () => {
@@ -761,49 +728,70 @@ describe('IyzicoErrorUtils', () => {
   describe('getErrorCategory', () => {
     test('should get category from API error', () => {
       const apiError = new IyzicoApiError('auth error', 401, {});
-      expect(IyzicoErrorUtils.getErrorCategory(apiError)).toBe(ErrorCategory.AUTHENTICATION);
+      expect(IyzicoErrorUtils.getErrorCategory(apiError)).toBe(
+        ErrorCategory.AUTHENTICATION
+      );
     });
 
     test('should get category from network error', () => {
       const networkError = new IyzicoNetworkError('network error');
-      expect(IyzicoErrorUtils.getErrorCategory(networkError)).toBe(ErrorCategory.NETWORK);
+      expect(IyzicoErrorUtils.getErrorCategory(networkError)).toBe(
+        ErrorCategory.NETWORK
+      );
     });
 
     test('should get category from config error', () => {
       const configError = new IyzicoConfigError('config error');
-      expect(IyzicoErrorUtils.getErrorCategory(configError)).toBe(ErrorCategory.CONFIGURATION);
+      expect(IyzicoErrorUtils.getErrorCategory(configError)).toBe(
+        ErrorCategory.CONFIGURATION
+      );
     });
 
     test('should return unknown for other errors', () => {
       const error = new Error('test');
-      expect(IyzicoErrorUtils.getErrorCategory(error)).toBe(ErrorCategory.UNKNOWN);
+      expect(IyzicoErrorUtils.getErrorCategory(error)).toBe(
+        ErrorCategory.UNKNOWN
+      );
     });
   });
 
   describe('getErrorSeverity', () => {
     test('should get severity from API error', () => {
       const apiError = new IyzicoApiError('server error', 500, {});
-      expect(IyzicoErrorUtils.getErrorSeverity(apiError)).toBe(ErrorSeverity.HIGH);
+      expect(IyzicoErrorUtils.getErrorSeverity(apiError)).toBe(
+        ErrorSeverity.HIGH
+      );
     });
 
     test('should get severity from network timeout error', () => {
-      const timeoutError = new IyzicoNetworkError('timeout', new Error('timeout'));
-      expect(IyzicoErrorUtils.getErrorSeverity(timeoutError)).toBe(ErrorSeverity.MEDIUM);
+      const timeoutError = new IyzicoNetworkError(
+        'timeout',
+        new Error('timeout')
+      );
+      expect(IyzicoErrorUtils.getErrorSeverity(timeoutError)).toBe(
+        ErrorSeverity.MEDIUM
+      );
     });
 
     test('should get severity from network error', () => {
       const networkError = new IyzicoNetworkError('network failed');
-      expect(IyzicoErrorUtils.getErrorSeverity(networkError)).toBe(ErrorSeverity.HIGH);
+      expect(IyzicoErrorUtils.getErrorSeverity(networkError)).toBe(
+        ErrorSeverity.HIGH
+      );
     });
 
     test('should get severity from config error', () => {
       const configError = new IyzicoConfigError('config error');
-      expect(IyzicoErrorUtils.getErrorSeverity(configError)).toBe(ErrorSeverity.CRITICAL);
+      expect(IyzicoErrorUtils.getErrorSeverity(configError)).toBe(
+        ErrorSeverity.CRITICAL
+      );
     });
 
     test('should return medium severity for unknown errors', () => {
       const error = new Error('test');
-      expect(IyzicoErrorUtils.getErrorSeverity(error)).toBe(ErrorSeverity.MEDIUM);
+      expect(IyzicoErrorUtils.getErrorSeverity(error)).toBe(
+        ErrorSeverity.MEDIUM
+      );
     });
   });
 
@@ -812,7 +800,11 @@ describe('IyzicoErrorUtils', () => {
       const apiError = new IyzicoApiError(
         'API error',
         400,
-        { errorCode: 'INVALID_CARD', cardNumber: '1234567890123456' },
+        {
+          errorCode: '12',
+          errorMessage: 'Card number is invalid',
+          cardNumber: '1234567890123456',
+        },
         'req_12345'
       );
 
@@ -823,16 +815,19 @@ describe('IyzicoErrorUtils', () => {
         requestId: 'req_12345',
         stack: expect.any(String),
         statusCode: 400,
-        errorCode: 'INVALID_CARD',
+        errorCode: '12',
         errorGroup: undefined,
-        responseData: { errorCode: 'INVALID_CARD' }, // cardNumber removed
+        responseData: {
+          errorCode: '12',
+          errorMessage: 'Card number is invalid',
+        }, // cardNumber removed
         url: undefined,
         method: undefined,
         isRetryable: false,
         isClientError: true,
         isServerError: false,
-        userFriendlyMessage: 'Invalid card information',
-        category: ErrorCategory.PAYMENT,
+        userFriendlyMessage: 'Card number is invalid',
+        category: ErrorCategory.VALIDATION,
         severity: ErrorSeverity.LOW,
       });
     });
@@ -885,21 +880,255 @@ describe('Error Messages Constants', () => {
     expect(IYZICO_ERROR_MESSAGES).toBeDefined();
     expect(typeof IYZICO_ERROR_MESSAGES).toBe('object');
     expect(Object.keys(IYZICO_ERROR_MESSAGES).length).toBeGreaterThan(0);
-    
-    // Check some key error messages exist
-    expect(IYZICO_ERROR_MESSAGES.INVALID_CARD).toBeDefined();
-    expect(IYZICO_ERROR_MESSAGES.SUBSCRIPTION_NOT_FOUND).toBeDefined();
-    expect(IYZICO_ERROR_MESSAGES.PAYMENT_METHOD_REQUIRED).toBeDefined();
-    expect(IYZICO_ERROR_MESSAGES.RATE_LIMIT_EXCEEDED).toBeDefined();
+
+    // Check some key numeric error codes exist (these are what Iyzico actually returns)
+    expect(IYZICO_ERROR_MESSAGES['1']).toBeDefined();
+    expect(IYZICO_ERROR_MESSAGES['11']).toBeDefined();
+    expect(IYZICO_ERROR_MESSAGES['1000']).toBeDefined();
+    expect(IYZICO_ERROR_MESSAGES['5001']).toBeDefined();
   });
 
   test('should have user-friendly messages', () => {
     // All messages should be user-friendly strings
-    Object.values(IYZICO_ERROR_MESSAGES).forEach(message => {
+    Object.values(IYZICO_ERROR_MESSAGES).forEach((message) => {
       expect(typeof message).toBe('string');
       expect(message.length).toBeGreaterThan(0);
-      // Should not contain technical jargon
-      expect(message).not.toMatch(/API|HTTP|JSON|null|undefined/i);
+      // Should not contain low-level technical jargon (HTTP/JSON/null/undefined are too technical)
+      // Note: "API" is acceptable in auth/config errors as it's part of the domain language
+      expect(message).not.toMatch(/HTTP|JSON|null|undefined/i);
     });
+  });
+});
+
+describe('Business Constraint Error Detection', () => {
+  test('should detect business constraint error (404 + errorCode "1")', () => {
+    const error = new IyzicoApiError(
+      'System error',
+      404,
+      { errorCode: '1', errorMessage: 'System error' },
+      'req_123',
+      { method: 'DELETE', url: '/v2/subscription/pricing-plans/abc' }
+    );
+
+    expect(error.isBusinessConstraintError()).toBe(true);
+    expect(error.isNotFoundError()).toBe(false);
+  });
+
+  test('should detect real not found error (404 without errorCode "1")', () => {
+    const error = new IyzicoApiError('Not found', 404, {
+      errorCode: '404',
+      errorMessage: 'Resource not found',
+    });
+
+    expect(error.isNotFoundError()).toBe(true);
+    expect(error.isBusinessConstraintError()).toBe(false);
+  });
+
+  test('should detect real not found error (404 with no errorCode)', () => {
+    const error = new IyzicoApiError('Not found', 404, {
+      errorMessage: 'Resource not found',
+    });
+
+    expect(error.isNotFoundError()).toBe(true);
+    expect(error.isBusinessConstraintError()).toBe(false);
+  });
+
+  test('should provide contextual message for delete operation with DELETE method', () => {
+    const error = new IyzicoApiError(
+      'System error',
+      404,
+      { errorCode: '1' },
+      'req_123',
+      { method: 'DELETE' }
+    );
+
+    const message = error.getContextualMessage('plan', 'plan-123');
+    expect(message).toContain('Cannot delete plan');
+    expect(message).toContain('plan-123');
+    expect(message).toContain('active subscriptions');
+  });
+
+  test('should provide contextual message for delete operation', () => {
+    const error = new IyzicoApiError(
+      'System error',
+      404,
+      { errorCode: '1' },
+      'req_123',
+      { method: 'POST' }
+    );
+
+    const message = error.getContextualMessage('delete', 'resource-123');
+    expect(message).toContain('Cannot delete');
+    expect(message).toContain('resource-123');
+    expect(message).toContain('business');
+  });
+
+  test('should provide generic contextual message for non-delete operations', () => {
+    const error = new IyzicoApiError(
+      'System error',
+      404,
+      { errorCode: '1' },
+      'req_123',
+      { method: 'POST' }
+    );
+
+    const message = error.getContextualMessage();
+    expect(message).toContain('business constraints');
+    expect(message).toContain('dependencies');
+  });
+
+  test('should provide contextual message for real 404', () => {
+    const error = new IyzicoApiError('Not found', 404, { errorCode: '404' });
+
+    const message = error.getContextualMessage();
+    expect(message).toContain('Resource not found');
+    expect(message).toContain('Verify the ID');
+  });
+
+  test('should fall back to user-friendly message for other errors', () => {
+    const error = new IyzicoApiError('Validation error', 400, {
+      errorCode: 'VALIDATION_ERROR',
+    });
+
+    const message = error.getContextualMessage();
+    expect(message).toBeTruthy();
+  });
+
+  test('should provide helpful suggestions for business constraints with DELETE method', () => {
+    const error = new IyzicoApiError(
+      'System error',
+      404,
+      { errorCode: '1' },
+      'req_123',
+      { method: 'DELETE' }
+    );
+
+    const suggestion = error.getSuggestion('delete');
+    expect(suggestion).toContain('active subscriptions');
+    expect(suggestion).toContain('cancel subscriptions');
+  });
+
+  test('should provide helpful suggestions for business constraints without operation', () => {
+    const error = new IyzicoApiError(
+      'System error',
+      404,
+      { errorCode: '1' },
+      'req_123',
+      { method: 'DELETE' }
+    );
+
+    const suggestion = error.getSuggestion();
+    expect(suggestion).toContain('subscriptions');
+  });
+
+  test('should provide suggestions for real 404 errors', () => {
+    const error = new IyzicoApiError('Not found', 404, { errorCode: '404' });
+
+    const suggestion = error.getSuggestion('plan');
+    expect(suggestion).toContain('Verify');
+    expect(suggestion).toContain('plan');
+  });
+
+  test('should provide suggestions for auth errors', () => {
+    const error = new IyzicoApiError('Unauthorized', 401, {});
+
+    const suggestion = error.getSuggestion();
+    expect(suggestion).toContain('credentials');
+  });
+
+  test('should provide suggestions for retryable errors', () => {
+    const error = new IyzicoApiError('Server error', 500, {});
+
+    const suggestion = error.getSuggestion();
+    expect(suggestion).toContain('temporary');
+  });
+
+  test('should provide generic suggestions for other errors', () => {
+    const error = new IyzicoApiError('Validation error', 400, {});
+
+    const suggestion = error.getSuggestion();
+    expect(suggestion).toContain('error details');
+  });
+});
+
+describe('New Error Code Mappings', () => {
+  test('should have general error code mappings', () => {
+    expect(IYZICO_ERROR_MESSAGES['1']).toBeDefined();
+    expect(IYZICO_ERROR_MESSAGES['11']).toBeDefined();
+    expect(IYZICO_ERROR_MESSAGES['27']).toBeDefined();
+    expect(IYZICO_ERROR_MESSAGES['1']).toBe('System error occurred');
+    expect(IYZICO_ERROR_MESSAGES['11']).toBe('Invalid request');
+  });
+
+  test('should have authentication error code mappings', () => {
+    expect(IYZICO_ERROR_MESSAGES['1000']).toBeDefined();
+    expect(IYZICO_ERROR_MESSAGES['1001']).toBeDefined();
+    expect(IYZICO_ERROR_MESSAGES['1009']).toBeDefined();
+    expect(IYZICO_ERROR_MESSAGES['1000']).toContain('signature');
+    expect(IYZICO_ERROR_MESSAGES['1001']).toContain('credentials');
+  });
+
+  test('should have validation error code mappings', () => {
+    expect(IYZICO_ERROR_MESSAGES['5001']).toBeDefined();
+    expect(IYZICO_ERROR_MESSAGES['5002']).toBeDefined();
+    expect(IYZICO_ERROR_MESSAGES['5111']).toBeDefined();
+  });
+});
+
+describe('IyzicoErrorUtils extended methods', () => {
+  test('should detect business constraint errors', () => {
+    const error = new IyzicoApiError('System error', 404, { errorCode: '1' });
+    expect(IyzicoErrorUtils.isBusinessConstraintError(error)).toBe(true);
+  });
+
+  test('should not detect non-business constraint errors', () => {
+    const error = new IyzicoApiError('Not found', 404, { errorCode: '404' });
+    expect(IyzicoErrorUtils.isBusinessConstraintError(error)).toBe(false);
+  });
+
+  test('should not detect business constraint for non-API errors', () => {
+    const error = new IyzicoNetworkError('Network error');
+    expect(IyzicoErrorUtils.isBusinessConstraintError(error)).toBe(false);
+  });
+
+  test('should detect not found errors', () => {
+    const error = new IyzicoApiError('Not found', 404, { errorCode: '404' });
+    expect(IyzicoErrorUtils.isNotFoundError(error)).toBe(true);
+  });
+
+  test('should not detect not found for business constraints', () => {
+    const error = new IyzicoApiError('System error', 404, { errorCode: '1' });
+    expect(IyzicoErrorUtils.isNotFoundError(error)).toBe(false);
+  });
+
+  test('should get contextual message', () => {
+    const error = new IyzicoApiError('System error', 404, { errorCode: '1' });
+    const message = IyzicoErrorUtils.getContextualMessage(
+      error,
+      'plan',
+      'plan-123'
+    );
+    expect(message).toContain('business constraints');
+  });
+
+  test('should get contextual message for non-API errors', () => {
+    const error = new IyzicoNetworkError('Network error');
+    const message = IyzicoErrorUtils.getContextualMessage(error);
+    expect(message).toBeTruthy();
+  });
+
+  test('should get suggestion', () => {
+    const error = new IyzicoApiError('System error', 404, { errorCode: '1' });
+    const suggestion = IyzicoErrorUtils.getSuggestion(error, 'delete');
+    expect(suggestion).toBeDefined();
+    expect(suggestion.length).toBeGreaterThan(0);
+  });
+
+  test('should get suggestion for non-API errors', () => {
+    const error = new Error('Generic error');
+    const suggestion = IyzicoErrorUtils.getSuggestion(error);
+    expect(suggestion).toBe(
+      'An unexpected error occurred. Please try again later.'
+    );
   });
 });

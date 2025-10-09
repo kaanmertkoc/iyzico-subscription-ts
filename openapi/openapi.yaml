@@ -530,8 +530,45 @@ paths:
     
     delete:
       tags: [Plans]
-      summary: Delete a pricing plan
+      summary: "⚠️ Delete a pricing plan (NON-FUNCTIONAL)"
       operationId: deletePlan
+      deprecated: true
+      description: |
+        **🐛 KNOWN ISSUE: This endpoint appears to be non-functional in Iyzico's API**
+        
+        This endpoint consistently returns:
+        - Status: `404`
+        - Error Code: `"1"` (System error)
+        - Error Message: "Sistem hatası"
+        
+        This occurs even when the plan **exists** and is confirmed via GET/LIST endpoints.
+        
+        **Workarounds:**
+        1. **Recommended**: Use the update endpoint to mark plans as inactive
+        2. Implement soft-delete in your application layer
+        3. Contact Iyzico support to report this issue
+        
+        **SDK Behavior:**
+        ```typescript
+        try {
+          await iyzico.plans.delete('plan-id');
+        } catch (error) {
+          // Will throw IyzicoApiError with:
+          // - statusCode: 404
+          // - errorCode: "1"
+          // - isBusinessConstraintError(): true
+          
+          console.error(error.getContextualMessage('plan', 'plan-id'));
+          // "Cannot delete plan 'plan-id'. This may be due to: 
+          //  active subscriptions using it, plan status restrictions, 
+          //  or other business rules."
+          
+          console.error(error.getSuggestion('delete'));
+          // "Check for active subscriptions using this plan..."
+        }
+        ```
+        
+        See [GitHub Issues](https://github.com/kaanmertkoc/iyzico-subscription-ts/issues) to track this issue.
       parameters:
         - name: pricingPlanReferenceCode
           in: path
@@ -540,11 +577,35 @@ paths:
             type: string
       responses:
         '200':
-          description: Plan deleted successfully
+          description: Plan deleted successfully (⚠️ This response is theoretical - endpoint not functional)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SimpleResponse'
+        '404':
+          description: |
+            **Known Issue**: Returns 404 even when plan exists.
+            This indicates the endpoint is not properly implemented on Iyzico's side.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 404
+                  errorCode:
+                    type: string
+                    example: "1"
+                  errorMessage:
+                    type: string
+                    example: "System error"
+                  systemTime:
+                    type: integer
+                    example: 1760035962892
+                  locale:
+                    type: string
+                    example: "tr"
 
   # ==================== SUBSCRIPTIONS ====================
   /v2/subscription/subscriptions:

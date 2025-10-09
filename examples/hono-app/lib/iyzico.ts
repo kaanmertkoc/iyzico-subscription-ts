@@ -25,7 +25,7 @@ export const iyzico = new IyzicoClient({
   ...(sandboxApiKey && { sandboxApiKey }),
   ...(sandboxSecretKey && { sandboxSecretKey }),
   isSandbox,
-  debug: process.env.NODE_ENV === 'development', // Enable debug in development
+  debug: true, // Enable debug in development
 });
 
 export const iyzicoMinimal = new IyzicoClient({

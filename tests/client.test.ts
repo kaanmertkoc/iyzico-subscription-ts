@@ -1255,6 +1255,46 @@ describe('IyzicoClient', () => {
   });
 
   describe('error handling edge cases', () => {
+    test('should handle business constraint error (404 with errorCode "1")', async () => {
+      const mockErrorResponse = {
+        status: 404,
+        errorCode: '1',
+        errorMessage: 'System error',
+        systemTime: Date.now(),
+        locale: 'tr',
+      };
+
+      fetchMock.mockResolvedValue(
+        new Response(JSON.stringify(mockErrorResponse), {
+          status: 404,
+          headers: { 'content-type': 'application/json' },
+        })
+      );
+
+      try {
+        await client.request({
+          path: '/v2/subscription/pricing-plans/plan-123',
+          method: 'DELETE',
+        });
+        throw new Error('Expected error was not thrown');
+      } catch (error) {
+        expect(error).toBeInstanceOf(IyzicoApiError);
+
+        const apiError = error as IyzicoApiError;
+        expect(apiError.statusCode).toBe(404);
+        expect(apiError.errorCode).toBe('1');
+        expect(apiError.isBusinessConstraintError()).toBe(true);
+        expect(apiError.isNotFoundError()).toBe(false);
+
+        const contextual = apiError.getContextualMessage('plan', 'plan-123');
+        expect(contextual).toContain('Cannot delete');
+        expect(contextual).toContain('business');
+
+        const suggestion = apiError.getSuggestion('delete');
+        expect(suggestion).toContain('active subscriptions');
+      }
+    });
+
     test('should handle generic network errors', async () => {
       fetchMock.mockRejectedValue(new Error('Generic network error'));
 

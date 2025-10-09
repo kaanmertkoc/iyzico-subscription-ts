@@ -368,6 +368,18 @@ export class IyzicoClient {
             ? (responseData as IyzicoApiErrorResponse)
             : {};
 
+        if (this.options.debug) {
+          console.error('[IyzicoSDK] API Error:', {
+            status: response.status,
+            errorCode: errorData?.errorCode || errorData?.code,
+            errorMessage: errorData?.errorMessage || errorData?.message,
+            path,
+            method,
+            requestId,
+            isBusinessConstraint: response.status === 404 && (errorData?.errorCode === '1' || errorData?.code === '1'),
+          });
+        }
+
         const apiError = new IyzicoApiError(
           errorData?.errorMessage ||
             errorData?.message ||

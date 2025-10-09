@@ -263,6 +263,48 @@ export default async function handler(request) {
 }
 ```
 
+## 🐛 Known Issues
+
+### Plans DELETE Endpoint Non-Functional
+
+**Critical Issue**: The DELETE endpoint for pricing plans (`DELETE /v2/subscription/pricing-plans/{id}`) appears to be **not implemented** on Iyzico's API.
+
+**Symptoms:**
+- Returns `404` status code with `errorCode: "1"` (System error)
+- Error message: "Sistem hatası" (System error)
+- Occurs even when the plan **exists** (confirmed via GET/LIST endpoints)
+
+**Evidence:**
+```typescript
+// Plan exists - confirmed via list
+const plans = await iyzico.plans.list(productId);
+// Returns: [{ referenceCode: 'abc-123', status: 'ACTIVE', ... }]
+
+// Attempt to delete returns error
+await iyzico.plans.delete('abc-123');
+// Throws: IyzicoApiError with statusCode 404, errorCode "1"
+```
+
+**Workarounds:**
+1. **Recommended**: Update plan status to inactive instead of deleting:
+   ```typescript
+   await iyzico.plans.update(planId, { 
+     /* update with inactive status if supported */
+   });
+   ```
+2. Handle deletion in your application layer (soft delete)
+3. Contact Iyzico support to report the issue
+
+**SDK Behavior:**
+- The SDK correctly implements the DELETE request
+- Enhanced error handling detects this as a "business constraint" error
+- Debug mode logs a warning when calling this endpoint
+- `error.isBusinessConstraintError()` returns `true` for this scenario
+
+See [GitHub Issues](https://github.com/kaanmertkoc/iyzico-subscription-ts/issues) to track this issue.
+
+---
+
 ## ⚠️ Sandbox Limitations
 
 **Important**: Iyzico's sandbox environment has significant limitations for subscription routes.
