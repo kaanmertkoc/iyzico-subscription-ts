@@ -19,16 +19,83 @@ info:
     bun install @kaanmertkoc/iyzico-subs-ts
     # or
     yarn add @kaanmertkoc/iyzico-subs-ts
+    # or
+    pnpm add @kaanmertkoc/iyzico-subs-ts
+    # or
+    deno add @kaanmertkoc/iyzico-subs-ts
     ```
     
-    ### Initialize the Client
+    ### Environment Variables
+    
+    Create a `.env` file in your project root:
+    
+    ```env
+    # Production credentials (required)
+    IYZICO_API_KEY=your_production_api_key
+    IYZICO_SECRET_KEY=your_production_secret_key
+    IYZICO_ENVIRONMENT=production # production or sandbox (default: production)
+    
+    # Sandbox credentials (optional, only if using sandbox)
+    IYZICO_SANDBOX_API_KEY=your_sandbox_api_key
+    IYZICO_SANDBOX_SECRET_KEY=your_sandbox_secret_key
+    
+    # Node environment
+    NODE_ENV=development # development or production
+    ```
+    
+    ### Basic Usage
+    
     ```typescript
     import { IyzicoClient } from '@kaanmertkoc/iyzico-subs-ts';
     
     const iyzico = new IyzicoClient({
-      apiKey: process.env.IYZICO_API_KEY,
-      secretKey: process.env.IYZICO_SECRET_KEY,
-      isSandbox: false  // Use production for subscriptions
+      apiKey: process.env.IYZICO_API_KEY!,
+      secretKey: process.env.IYZICO_SECRET_KEY!,
+      isSandbox: process.env.NODE_ENV !== 'production',
+      debug: process.env.NODE_ENV === 'development' // Enable debug logging in development
+    });
+    
+    // Create a subscription product
+    const product = await iyzico.products.create({
+      name: 'Premium Subscription',
+      description: 'Monthly premium plan'
+    });
+    
+    // Create a pricing plan
+    const plan = await iyzico.plans.create({
+      productReferenceCode: product.data.referenceCode,
+      name: 'Monthly Plan',
+      price: 29.99,
+      currencyCode: 'TRY',
+      paymentInterval: 'MONTHLY',
+      paymentIntervalCount: 1,
+      planPaymentType: 'RECURRING'
+    });
+    ```
+    
+    ### Configuration Options
+    
+    ```typescript
+    new IyzicoClient({
+      // Required: Your API credentials
+      apiKey: string;
+      secretKey: string;
+      
+      // Optional: Sandbox credentials (only needed if isSandbox: true)
+      sandboxApiKey?: string;
+      sandboxSecretKey?: string;
+      
+      // Optional: Environment settings
+      isSandbox?: boolean;          // Use sandbox API (default: false)
+      debug?: boolean;              // Enable debug logging (default: false)
+                                    // Recommended: process.env.NODE_ENV === 'development'
+      baseUrl?: string;             // Custom API base URL
+      timeout?: number;             // Request timeout in ms (default: 30000)
+      maxRetries?: number;          // Max retry attempts (default: 3)
+      
+      // Optional: Custom headers
+      userAgent?: string;           // Custom user agent
+      defaultHeaders?: Record<string, string>; // Additional headers
     });
     ```
     
@@ -108,6 +175,110 @@ info:
     
     ---
     
+    ## 🌐 Cross-Platform Usage
+    
+    The SDK works seamlessly across all modern JavaScript environments:
+    
+    ### Next.js API Route
+    ```typescript
+    // pages/api/subscriptions.ts
+    import { IyzicoClient } from '@kaanmertkoc/iyzico-subs-ts';
+    
+    const iyzico = new IyzicoClient({
+      apiKey: process.env.IYZICO_API_KEY!,
+      secretKey: process.env.IYZICO_SECRET_KEY!,
+      isSandbox: process.env.NODE_ENV !== 'production',
+      debug: process.env.NODE_ENV === 'development'
+    });
+    
+    export default async function handler(req, res) {
+      const subscription = await iyzico.subscriptions.create(req.body);
+      res.json(subscription);
+    }
+    ```
+    
+    ### Cloudflare Worker
+    ```typescript
+    import { IyzicoClient } from '@kaanmertkoc/iyzico-subs-ts';
+    
+    export default {
+      async fetch(request, env) {
+        const iyzico = new IyzicoClient({
+          apiKey: env.IYZICO_API_KEY,
+          secretKey: env.IYZICO_SECRET_KEY,
+          isSandbox: env.ENVIRONMENT !== 'production'
+        });
+        
+        const subscriptions = await iyzico.subscriptions.list();
+        return Response.json(subscriptions);
+      }
+    };
+    ```
+    
+    ### Vercel Edge Function
+    ```typescript
+    import { IyzicoClient } from '@kaanmertkoc/iyzico-subs-ts';
+    
+    export const config = { runtime: 'edge' };
+    
+    export default async function handler(request) {
+      const iyzico = new IyzicoClient({
+        apiKey: process.env.IYZICO_API_KEY!,
+        secretKey: process.env.IYZICO_SECRET_KEY!,
+        isSandbox: true
+      });
+      
+      const result = await iyzico.health.check();
+      return Response.json(result);
+    }
+    ```
+    
+    ---
+    
+    ## 🐛 Known Issues
+    
+    ### 1. Plans UPDATE Endpoint - Limited Fields
+    
+    **Limitation**: Only `name` and `trialPeriodDays` can be updated.
+    
+    **Official Statement** (from Iyzico docs):
+    > "Bu metod sadece name ve trialPeriodDays parametrelerinin güncellenmesine izin verir."
+    
+    **Fields That Cannot Be Updated:**
+    - ❌ `status` - Cannot change to INACTIVE via API
+    - ❌ `paymentInterval` - Cannot be modified after creation  
+    - ❌ `price` - Cannot be changed after creation
+    - ❌ All other fields are silently ignored
+    
+    **Workarounds:**
+    1. For price/interval changes: Create a new plan
+    2. For status changes: Manage in your application layer
+    
+    ---
+    
+    ### 2. Plans DELETE Endpoint - Non-Functional
+    
+    **Critical Issue**: The DELETE endpoint returns `404` with `errorCode: "1"` even when the plan exists.
+    
+    **SDK Behavior:**
+    ```typescript
+    try {
+      await iyzico.plans.delete('plan-id');
+    } catch (error) {
+      if (error.isBusinessConstraintError()) {
+        console.error(error.getContextualMessage('plan', 'plan-id'));
+        // "Cannot delete plan 'plan-id'. This may be due to active subscriptions..."
+      }
+    }
+    ```
+    
+    **Workarounds:**
+    1. Use update to mark as inactive (though status can't be changed - see above)
+    2. Implement soft-delete in your application
+    3. Contact Iyzico support
+    
+    ---
+    
     ## ⚠️ CRITICAL: Sandbox Limitations
     
     **Iyzico's sandbox does NOT support subscription endpoints!**
@@ -127,17 +298,77 @@ info:
     
     ---
     
+    ## ⚡ Error Handling
+    
+    The SDK provides structured error handling with user-friendly messages:
+    
+    ```typescript
+    import { 
+      IyzicoClient, 
+      IyzicoApiError, 
+      IyzicoNetworkError,
+      IyzicoSandboxLimitationError 
+    } from '@kaanmertkoc/iyzico-subs-ts';
+    
+    try {
+      const subscription = await iyzico.subscriptions.create(data);
+    } catch (error) {
+      // Sandbox limitation (422 with code "100001")
+      if (error instanceof IyzicoSandboxLimitationError) {
+        console.error('Sandbox limitation:', error.message);
+        console.error('Use production credentials for this route');
+      }
+      // General API errors (4xx, 5xx)
+      else if (error instanceof IyzicoApiError) {
+        console.error('API Error:', {
+          statusCode: error.statusCode,
+          message: error.message,
+          userFriendlyMessage: error.getUserFriendlyMessage(),
+          errorCode: error.errorCode,
+          category: error.getCategory(),
+          isRetryable: error.isRetryable(),
+          // New helper methods for business constraint errors
+          isBusinessConstraintError: error.isBusinessConstraintError(),
+          contextualMessage: error.getContextualMessage(),
+          suggestion: error.getSuggestion()
+        });
+      }
+      // Network errors (timeout, connection issues)
+      else if (error instanceof IyzicoNetworkError) {
+        console.error('Network Error:', {
+          message: error.message,
+          isTimeout: error.isTimeout
+        });
+      }
+    }
+    ```
+    
+    ### Error Types
+    
+    | Error Type | When It Occurs | Retryable |
+    |------------|----------------|----------|
+    | `IyzicoSandboxLimitationError` | Subscription routes in sandbox (422 + code "100001") | ❌ No - Use production |
+    | `IyzicoApiError` | API validation/business logic errors (4xx/5xx) | Depends on status |
+    | `IyzicoNetworkError` | Network issues, timeouts, DNS failures | ✅ Yes |
+    | `IyzicoValidationError` | Invalid request parameters (400) | ❌ No - Fix request |
+    | `IyzicoAuthenticationError` | Invalid credentials (401) | ❌ No - Check credentials |
+    
+    ---
+    
     ## 🌟 Features
-    - ✅ Full TypeScript support with comprehensive type definitions
-    - ✅ Cross-platform: Node.js 18+, Bun, Deno, Browsers, Serverless
-    - ✅ Zero dependencies
-    - ✅ Automatic HMAC-SHA256 authentication
-    - ✅ Comprehensive error handling
-    - ✅ Paginated list responses with `items`, `totalCount`, `currentPage`, `pageCount`
+    - ✅ **Full TypeScript support** with comprehensive type definitions
+    - ✅ **Cross-platform compatible** - Node.js 18+, Bun, Deno, browsers, serverless
+    - ✅ **Zero dependencies** - uses only standard web APIs (`fetch`, `crypto`)
+    - ✅ **Subscription-focused** - specifically designed for Iyzico's subscription routes
+    - ✅ **Modern ESM/CJS** - ships with both module formats
+    - ✅ **Comprehensive error handling** - structured errors with user-friendly messages
+    - ✅ **Built-in authentication** - automatic HMAC-SHA256 signature generation
+    - ✅ **Production ready** - used in production applications
     
     ## 🔗 Links
     - [GitHub Repository](https://github.com/kaanmertkoc/iyzico-subscription-ts)
     - [NPM Package](https://www.npmjs.com/package/@kaanmertkoc/iyzico-subs-ts)
+    - [Interactive Docs](https://iyzico-docs.kaanmertkoc.com)
     - [Example Hono App](https://github.com/kaanmertkoc/iyzico-subscription-ts/tree/main/examples/hono-app)
     
     ---
