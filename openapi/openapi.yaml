@@ -506,8 +506,48 @@ paths:
     
     post:
       tags: [Plans]
-      summary: Update a pricing plan
+      summary: "⚠️ Update a pricing plan (LIMITED FIELDS)"
       operationId: updatePlan
+      description: |
+        **⚠️ LIMITATION: Only `name` and `trialPeriodDays` can be updated**
+        
+        According to Iyzico's official documentation:
+        > "Bu metod sadece name ve trialPeriodDays parametrelerinin güncellenmesine izin verir."
+        > (This method only allows updating the name and trialPeriodDays parameters.)
+        
+        **Fields That CAN be updated:**
+        - ✅ `name` - The display name of the plan
+        - ✅ `trialPeriodDays` - The trial period duration
+        
+        **Fields That CANNOT be updated (silently ignored):**
+        - ❌ `status` - Cannot change to INACTIVE via API
+        - ❌ `paymentInterval` - Cannot be modified after creation
+        - ❌ `price` - Cannot be changed after creation
+        - ❌ `currencyCode` - Cannot be changed after creation
+        - ❌ `recurrenceCount` - Cannot be changed after creation
+        - ❌ `planPaymentType` - Cannot be changed after creation
+        
+        **SDK Usage:**
+        ```typescript
+        // ✅ This works - updates name and trialPeriodDays
+        await iyzico.plans.update('plan-id', {
+          name: 'New Plan Name',
+          trialPeriodDays: 14
+        });
+        
+        // ❌ These fields will be ignored by Iyzico API
+        await iyzico.plans.update('plan-id', {
+          status: 'INACTIVE',        // Ignored
+          paymentInterval: 'YEARLY',  // Ignored
+          price: 99.99                // Ignored
+        });
+        ```
+        
+        **Workarounds:**
+        - For price/interval changes: Create a new plan and migrate subscriptions
+        - For status changes: Manage availability in your application layer
+        
+        **Note:** Active subscriptions are not affected by plan updates.
       parameters:
         - name: pricingPlanReferenceCode
           in: path
@@ -520,9 +560,13 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/UpdatePlanRequest'
+            example:
+              pricingPlanReferenceCode: "plan-ref-code-123"
+              name: "Updated Plan Name"
+              trialPeriodDays: 14
       responses:
         '200':
-          description: Plan updated successfully
+          description: Plan updated successfully (only name and trialPeriodDays are actually updated)
           content:
             application/json:
               schema:

@@ -265,7 +265,54 @@ export default async function handler(request) {
 
 ## 🐛 Known Issues
 
-### Plans DELETE Endpoint Non-Functional
+### 1. Plans UPDATE Endpoint - Limited Fields
+
+**Limitation**: The UPDATE endpoint for pricing plans only allows updating **`name`** and **`trialPeriodDays`** fields.
+
+**Official Statement** (from Iyzico docs):
+> "Bu metod sadece name ve trialPeriodDays parametrelerinin güncellenmesine izin verir."
+> (This method only allows updating the name and trialPeriodDays parameters.)
+
+**Fields That Cannot Be Updated:**
+- ❌ `status` - Cannot change to INACTIVE via API
+- ❌ `paymentInterval` - Cannot be modified after creation  
+- ❌ `price` - Cannot be changed after creation
+- ❌ `currencyCode` - Cannot be changed after creation
+- ❌ `recurrenceCount` - Cannot be changed after creation
+- ❌ `planPaymentType` - Cannot be changed after creation
+
+**Evidence:**
+```typescript
+// Attempt to update status - silently ignored
+await iyzico.plans.update('plan-123', { 
+  status: 'INACTIVE',
+  name: 'Updated Name'
+});
+// Result: Only name is updated, status remains ACTIVE
+
+// Attempt to update paymentInterval - silently ignored  
+await iyzico.plans.update('plan-123', {
+  paymentInterval: 'YEARLY',
+  name: 'Updated Name'
+});
+// Result: Only name is updated, paymentInterval remains unchanged
+```
+
+**Workarounds:**
+1. **For status changes**: Manage plan availability in your application layer
+2. **For price changes**: Create a new plan with the new price
+3. **For interval changes**: Create a new plan with the new interval
+4. **Migration**: Update existing subscriptions to use the new plan
+
+**SDK Behavior:**
+- The SDK accepts all update parameters for flexibility
+- Only `name` and `trialPeriodDays` will actually be updated by Iyzico
+- Other fields are sent but silently ignored by the API
+- No error is returned for ignored fields
+
+---
+
+### 2. Plans DELETE Endpoint Non-Functional
 
 **Critical Issue**: The DELETE endpoint for pricing plans (`DELETE /v2/subscription/pricing-plans/{id}`) appears to be **not implemented** on Iyzico's API.
 

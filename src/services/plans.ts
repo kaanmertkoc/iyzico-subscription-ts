@@ -40,9 +40,31 @@ export class PlansService {
 
   /**
    * Updates an existing payment plan
+   * 
+   * **⚠️ LIMITATION: Only `name` and `trialPeriodDays` can be updated**
+   * 
+   * According to Iyzico's documentation, the update endpoint only supports modifying:
+   * - `name`: The display name of the plan
+   * - `trialPeriodDays`: The trial period duration
+   * 
+   * **Fields that CANNOT be updated:**
+   * - `status`: Cannot be changed via API (remains ACTIVE)
+   * - `paymentInterval`: Cannot be modified after creation
+   * - `price`: Cannot be changed after creation
+   * - `currencyCode`: Cannot be changed after creation
+   * - `recurrenceCount`: Cannot be changed after creation
+   * - `planPaymentType`: Cannot be changed after creation
+   * 
+   * **Workaround for status changes:**
+   * - To "deactivate" a plan, use the plan's `delete()` method (though it has known issues)
+   * - Alternatively, manage plan status in your application layer
+   * 
+   * **Note:** Active subscriptions are not affected by plan updates.
+   * 
    * @param pricingPlanReferenceCode - The pricing plan reference code to update
-   * @param params - Payment plan update parameters
+   * @param params - Payment plan update parameters (only name and trialPeriodDays are effective)
    * @returns Promise resolving to the updated payment plan data
+   * @see https://dev.iyzipay.com/tr/abonelik/subscriptions-api - Official documentation
    */
   async update(
     pricingPlanReferenceCode: string,
