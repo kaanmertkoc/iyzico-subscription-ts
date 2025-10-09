@@ -62,7 +62,8 @@ import { IyzicoClient } from '@kaanmertkoc/iyzico-subs-ts';
 const iyzico = new IyzicoClient({
   apiKey: process.env.IYZICO_API_KEY!,
   secretKey: process.env.IYZICO_SECRET_KEY!,
-  isSandbox: process.env.NODE_ENV !== 'production'
+  isSandbox: process.env.NODE_ENV !== 'production',
+  debug: process.env.NODE_ENV === 'development' // Enable debug logging in development
 });
 
 // Create a subscription product
@@ -195,10 +196,11 @@ new IyzicoClient({
   
   // Optional: Environment settings
   isSandbox?: boolean;          // Use sandbox API (default: false)
+  debug?: boolean;              // Enable debug logging (default: false)
+                                // Recommended: process.env.NODE_ENV === 'development'
   baseUrl?: string;             // Custom API base URL
   timeout?: number;             // Request timeout in ms (default: 30000)
   maxRetries?: number;          // Max retry attempts (default: 3)
-  debug?: boolean;              // Enable debug logging (default: false)
   
   // Optional: Custom headers
   userAgent?: string;           // Custom user agent
@@ -218,7 +220,8 @@ import { IyzicoClient } from '@kaanmertkoc/iyzico-subs-ts';
 const iyzico = new IyzicoClient({
   apiKey: process.env.IYZICO_API_KEY!,
   secretKey: process.env.IYZICO_SECRET_KEY!,
-  isSandbox: process.env.NODE_ENV !== 'production'
+  isSandbox: process.env.NODE_ENV !== 'production',
+  debug: process.env.NODE_ENV === 'development'
 });
 
 export default async function handler(req, res) {

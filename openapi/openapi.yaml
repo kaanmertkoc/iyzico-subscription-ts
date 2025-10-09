@@ -145,7 +145,7 @@ info:
     ## 📖 About This Documentation
     
     This OpenAPI specification documents the SDK methods you'll use. The endpoints shown are the underlying Iyzico API routes, but you'll interact with them through the SDK's clean interface (e.g., `iyzico.products.create()` instead of manually calling `/v2/subscription/products`).
-  version: 1.0.2
+  version: 1.0.3
   contact:
     name: Kaan Mert Koç
     url: https://github.kaanmertkoc.com
