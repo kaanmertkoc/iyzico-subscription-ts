@@ -114,7 +114,7 @@ const subscription = await iyzico.subscriptions.create({
 
 Explore the complete API reference with interactive examples:
 
-- **📖 Interactive Docs**: [iyzico-docs.kaanmertkoc.com](https://iyzico-docs.kaanmertkoc.com) _(Coming Soon)_
+- **📖 Interactive Docs**: [iyzico-docs.kaanmertkoc.com](https://iyzico-docs.kaanmertkoc.com)
 - **📄 OpenAPI Spec**: [View on GitHub](https://github.com/kaanmertkoc/iyzico-subscription-ts/blob/main/openapi/openapi.yaml)
 - **⬇️ Download Spec**: [openapi.yaml](https://raw.githubusercontent.com/kaanmertkoc/iyzico-subscription-ts/main/openapi/openapi.yaml)
 
