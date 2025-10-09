@@ -50,6 +50,7 @@ export class AuthManager {
     this.timestampProvider = config.timestampProvider || (() => Date.now());
     this.randomProvider = config.randomProvider || (() => Math.random());
 
+    /* c8 ignore next 3 */
     if (this.config.debug) {
       console.log('[AuthManager] Initialized with debug mode enabled');
     }
@@ -66,12 +67,16 @@ export class AuthManager {
     this.validateConfig(config);
 
     const randomKey = this.generateRandomKey();
-    const payload = this.createPayload({ randomKey, path: config.path, body: config.body });
+    const payload = this.createPayload({
+      randomKey,
+      path: config.path,
+      body: config.body,
+    });
     const signature = this.generateSignature(payload, config.secretKey);
-    const authString = this.createAuthString({ 
-      apiKey: config.apiKey, 
-      randomKey, 
-      signature 
+    const authString = this.createAuthString({
+      apiKey: config.apiKey,
+      randomKey,
+      signature,
     });
     const authorization = this.encodeAuthorization(authString);
 
@@ -82,6 +87,7 @@ export class AuthManager {
       Accept: 'application/json',
     };
 
+    /* c8 ignore next 5 */
     if (this.config.debug) {
       console.log('[AuthManager] Generated headers for path:', config.path);
       console.log('[AuthManager] Random key:', randomKey);

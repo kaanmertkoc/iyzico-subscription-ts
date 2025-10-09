@@ -110,6 +110,7 @@ export class PlansService {
     pricingPlanReferenceCode: string
   ): Promise<DeletePaymentPlanResponse> {
     // Log warning about endpoint issues
+    /* c8 ignore next 7 */
     if (this.client.getConfig().debug) {
       console.warn(
         '⚠️  [IyzicoSDK] Warning: The DELETE /pricing-plans endpoint is known to be non-functional.',

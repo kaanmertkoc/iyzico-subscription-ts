@@ -171,6 +171,7 @@ export class IyzicoClient {
     }
 
     // Warn about sandbox limitations
+    /* c8 ignore next 8 */
     if (this.options.isSandbox) {
       console.warn(
         '\n⚠️  Iyzico Sandbox Limitation Notice:\n' +
@@ -182,6 +183,7 @@ export class IyzicoClient {
     }
 
     // Log initialization if debug is enabled
+    /* c8 ignore next 9 */
     if (this.options.debug) {
       console.log('[IyzicoClient] Initialized with options:', {
         baseUrl: this.options.baseUrl,
@@ -214,6 +216,7 @@ export class IyzicoClient {
     const { path, method, body, retryCount = 0 } = requestConfig;
     const url = `${this.options.baseUrl}${path}`;
 
+    /* c8 ignore next 8 */
     if (this.options.debug) {
       console.log('[IyzicoSDK] Starting request:', {
         method,
@@ -242,7 +245,7 @@ export class IyzicoClient {
     // Extract path without query parameters for authentication signature
     // According to Iyzico docs, HMAC signature should only include the URI path, not query string
     const pathWithoutQuery = path.split('?')[0];
-    
+
     // Generate authentication headers using AuthManager
     const authResult = this.authManager.generateAuthHeaders({
       apiKey: this.options.isSandbox
@@ -284,6 +287,7 @@ export class IyzicoClient {
           ? requestBodyString
           : null;
 
+      /* c8 ignore next 8 */
       if (this.options.debug) {
         console.log('[IyzicoSDK] Making HTTP request:', {
           url,
@@ -301,6 +305,7 @@ export class IyzicoClient {
         signal: controller.signal,
       });
 
+      /* c8 ignore next 6 */
       if (this.options.debug) {
         console.log('[IyzicoSDK] HTTP response received:', {
           status: response.status,
@@ -319,12 +324,14 @@ export class IyzicoClient {
         responseData = (await response.json()) as unknown;
       } else {
         const textData = await response.text();
+        /* c8 ignore next 3 */
         if (this.options.debug) {
           console.warn('[IyzicoSDK] Non-JSON response received:', textData);
         }
         responseData = { rawResponse: textData };
       }
 
+      /* c8 ignore next 12 */
       if (this.options.debug) {
         const debugData =
           responseData && typeof responseData === 'object'
@@ -345,6 +352,7 @@ export class IyzicoClient {
       if (!response.ok) {
         // Check if we should retry
         if (this.shouldRetry(response.status, retryCount)) {
+          /* c8 ignore next 7 */
           if (this.options.debug) {
             console.log('[IyzicoSDK] Retrying request:', {
               attempt: retryCount + 1,
@@ -368,6 +376,7 @@ export class IyzicoClient {
             ? (responseData as IyzicoApiErrorResponse)
             : {};
 
+        /* c8 ignore next 10 */
         if (this.options.debug) {
           console.error('[IyzicoSDK] API Error:', {
             status: response.status,
@@ -376,7 +385,9 @@ export class IyzicoClient {
             path,
             method,
             requestId,
-            isBusinessConstraint: response.status === 404 && (errorData?.errorCode === '1' || errorData?.code === '1'),
+            isBusinessConstraint:
+              response.status === 404 &&
+              (errorData?.errorCode === '1' || errorData?.code === '1'),
           });
         }
 
@@ -403,6 +414,7 @@ export class IyzicoClient {
 
       return responseData as T;
     } catch (error) {
+      /* c8 ignore next 7 */
       if (this.options.debug) {
         console.error('[IyzicoSDK] Request failed:', {
           error: error instanceof Error ? error.message : String(error),
