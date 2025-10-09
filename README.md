@@ -463,7 +463,7 @@ if (iyzico.isSandbox) {
 
 ## ⚡ Error Handling
 
-The SDK provides structured error handling with user-friendly messages:
+The SDK provides structured error handling with user-friendly messages and helpful debugging methods:
 
 ```typescript
 import { 
@@ -484,23 +484,58 @@ try {
   // General API errors (4xx, 5xx)
   else if (error instanceof IyzicoApiError) {
     console.error('API Error:', {
+      // Basic error info
       statusCode: error.statusCode,
-      message: error.message,
-      userFriendlyMessage: error.getUserFriendlyMessage(),
       errorCode: error.errorCode,
-      category: error.getCategory(),
-      isRetryable: error.isRetryable()
+      message: error.message,
+      
+      // User-friendly message for displaying to end users
+      userFriendlyMessage: error.getUserFriendlyMessage(),
+      
+      // Error classification
+      category: error.getCategory(), // 'authentication', 'validation', etc.
+      isRetryable: error.isRetryable(),
+      isClientError: error.isClientError(),
+      isServerError: error.isServerError(),
+      
+      // Special handling for business constraints (e.g., plan deletion)
+      isBusinessConstraint: error.isBusinessConstraintError(),
+      contextualMessage: error.getContextualMessage('plan', 'plan-123'),
+      suggestion: error.getSuggestion('delete'),
+      
+      // Request details for debugging
+      url: error.url,
+      method: error.method,
+      requestId: error.requestId,
     });
   }
   // Network errors (timeout, connection issues)
   else if (error instanceof IyzicoNetworkError) {
     console.error('Network Error:', {
       message: error.message,
-      isTimeout: error.isTimeout
+      isTimeout: error.isTimeout,
+      requestId: error.requestId
     });
   }
 }
 ```
+
+### Available Error Methods
+
+All `IyzicoApiError` instances provide these helpful methods:
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getUserFriendlyMessage()` | `string` | Safe message to display to end users |
+| `getCategory()` | `ErrorCategory` | Error category (authentication, validation, etc.) |
+| `isRetryable()` | `boolean` | Whether the request should be retried |
+| `isClientError()` | `boolean` | True for 4xx errors |
+| `isServerError()` | `boolean` | True for 5xx errors |
+| `isBusinessConstraintError()` | `boolean` | True for 404 + errorCode "1" (business rules) |
+| `isNotFoundError()` | `boolean` | True for real 404s (resource doesn't exist) |
+| `getContextualMessage(operation?, resourceId?)` | `string` | Operation-specific error message |
+| `getSuggestion(operation?)` | `string` | Actionable suggestions for fixing the error |
+| `toJSON()` | `object` | Complete error details for logging |
 
 ### Error Types
 
@@ -509,8 +544,7 @@ try {
 | `IyzicoSandboxLimitationError` | Subscription routes in sandbox (422 + code "100001") | ❌ No - Use production |
 | `IyzicoApiError` | API validation/business logic errors (4xx/5xx) | Depends on status |
 | `IyzicoNetworkError` | Network issues, timeouts, DNS failures | ✅ Yes |
-| `IyzicoValidationError` | Invalid request parameters (400) | ❌ No - Fix request |
-| `IyzicoAuthenticationError` | Invalid credentials (401) | ❌ No - Check credentials |
+| `IyzicoConfigError` | Invalid SDK configuration | ❌ No - Fix configuration |
 
 ## 🛠️ Development
 
