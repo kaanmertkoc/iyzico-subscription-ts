@@ -1,0 +1,22 @@
+{
+  "entries": [
+    {
+      "version": "1.0.2",
+      "date": "2025-01-05T12:00:00.000Z",
+      "zipped": 41187,
+      "unzipped": 264280,
+      "zippedFormatted": "40.22 KB",
+      "unzippedFormatted": "258.09 KB",
+      "files": 116
+    },
+    {
+      "version": "1.0.3",
+      "date": "2025-10-09T23:30:25.070Z",
+      "zipped": 43259,
+      "unzipped": 265213,
+      "zippedFormatted": "42.25 KB",
+      "unzippedFormatted": "259.00 KB",
+      "files": 116
+    }
+  ]
+}

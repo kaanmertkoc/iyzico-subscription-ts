@@ -66,21 +66,24 @@
   "scripts": {
     "test": "vitest",
     "test:coverage": "vitest --coverage",
-    "build": "npm run build:clean && npm run build:esm && npm run build:cjs && npm run build:types",
+    "build": "bun run build:clean && bun run build:esm && bun run build:cjs && bun run build:types",
     "build:clean": "rm -rf dist",
     "build:esm": "tsc -p tsconfig.esm.json",
     "build:cjs": "tsc -p tsconfig.cjs.json",
     "build:types": "tsc -p tsconfig.types.json",
     "typecheck": "tsc --noEmit",
-    "dev": "npm --prefix examples/hono-app run dev",
-    "dev:install": "cd examples/hono-app && npm install",
+    "dev": "bun --cwd examples/hono-app run dev",
+    "dev:install": "cd examples/hono-app && bun install",
     "docs:sync": "cp openapi/openapi.yaml openapi/docs/openapi.yaml",
     "docs:serve": "bun --hot openapi/docs/server.ts",
     "docs:open": "open openapi/docs/index.html",
-    "prepublishOnly": "npm run build",
+    "size": "bun scripts/check-package-size.ts",
+    "size:track": "bun scripts/check-package-size.ts track",
+    "size:history": "bun scripts/check-package-size.ts history",
+    "prepublishOnly": "bun run build",
     "publish:npm": "npm publish --access public",
     "release:github": "gh release create v$(node -p \"require('./package.json').version\") --generate-notes",
-    "release": "npm run publish:npm && npm run release:github"
+    "release": "bun run publish:npm && bun run release:github"
   },
   "engines": {
     "node": ">=18.0.0"
