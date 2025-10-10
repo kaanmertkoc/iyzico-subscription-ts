@@ -933,6 +933,8 @@ describe('CheckoutService', () => {
         name: 'Error',
         surname: 'Test',
         email: 'error@test.com',
+        gsmNumber: '5551234567',
+        identityNumber: '11111111111',
         pricingPlanReferenceCode: 'INVALID_PLAN',
         billingAddress: {
           contactName: 'Error Test',

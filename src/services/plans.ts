@@ -40,9 +40,31 @@ export class PlansService {
 
   /**
    * Updates an existing payment plan
+   *
+   * **⚠️ LIMITATION: Only `name` and `trialPeriodDays` can be updated**
+   *
+   * According to Iyzico's documentation, the update endpoint only supports modifying:
+   * - `name`: The display name of the plan
+   * - `trialPeriodDays`: The trial period duration
+   *
+   * **Fields that CANNOT be updated:**
+   * - `status`: Cannot be changed via API (remains ACTIVE)
+   * - `paymentInterval`: Cannot be modified after creation
+   * - `price`: Cannot be changed after creation
+   * - `currencyCode`: Cannot be changed after creation
+   * - `recurrenceCount`: Cannot be changed after creation
+   * - `planPaymentType`: Cannot be changed after creation
+   *
+   * **Workaround for status changes:**
+   * - To "deactivate" a plan, use the plan's `delete()` method (though it has known issues)
+   * - Alternatively, manage plan status in your application layer
+   *
+   * **Note:** Active subscriptions are not affected by plan updates.
+   *
    * @param pricingPlanReferenceCode - The pricing plan reference code to update
-   * @param params - Payment plan update parameters
+   * @param params - Payment plan update parameters (only name and trialPeriodDays are effective)
    * @returns Promise resolving to the updated payment plan data
+   * @see https://docs.iyzico.com/urunler/abonelik/abonelik-entegrasyonu/odeme-plani#post-v2-subscription-pricing-plans-pricingplanreferencecode - Official documentation
    */
   async update(
     pricingPlanReferenceCode: string,
@@ -63,12 +85,37 @@ export class PlansService {
 
   /**
    * Deletes a payment plan
+   *
+   * **⚠️ WARNING: This endpoint appears to be non-functional in Iyzico's API**
+   *
+   * Based on testing, Iyzico's DELETE endpoint for pricing plans consistently returns:
+   * - Status: 404
+   * - Error Code: "1" (System error)
+   * - Message: "Sistem hatası"
+   *
+   * This occurs even when the plan exists and is confirmed via the list/retrieve endpoints.
+   * Also update endpoint is not working as expected as stated in the documentation.
+   * So we can not make a payment plan inactive therefore we can not delete a payment plan.
+   *
    * @param pricingPlanReferenceCode - The pricing plan reference code to delete
    * @returns Promise resolving to the deletion response
+   * @throws {IyzicoApiError} Will throw with 404 status and errorCode "1" indicating business constraint
+   * @see https://github.com/kaanmertkoc/iyzico-subscription-ts/issues - Report issues here
    */
   async delete(
     pricingPlanReferenceCode: string
   ): Promise<DeletePaymentPlanResponse> {
+    // Log warning about endpoint issues
+    /* c8 ignore next 7 */
+    if (this.client.getConfig().debug) {
+      console.warn(
+        '⚠️  [IyzicoSDK] Warning: The DELETE /pricing-plans endpoint is known to be non-functional.',
+        '\n   Iyzico returns 404 with errorCode "1" even for existing plans.',
+        '\n   Consider using update() to mark plans as inactive instead.',
+        '\n   See: https://github.com/kaanmertkoc/iyzico-subscription-ts#known-issues'
+      );
+    }
+
     return this.client.request<DeletePaymentPlanResponse>({
       path: `/v2/subscription/pricing-plans/${pricingPlanReferenceCode}`,
       method: 'DELETE',

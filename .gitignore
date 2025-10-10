@@ -1,9 +1,10 @@
 # Dependencies
 node_modules/
 
-# Documentation (ignore all .md files except README.md)
+# Documentation (ignore all .md files except README.md and PACKAGE_SIZE_TRACKING.md)
 *.md
 !README.md
+!PACKAGE_SIZE_TRACKING.md
 
 # Build outputs
 dist/
@@ -78,6 +79,9 @@ yarn.lock
 
 # Output of 'npm pack'
 *.tgz
+
+# Package size tracking temp files
+.package-size-temp/
 
 # Yarn Integrity file
 .yarn-integrity

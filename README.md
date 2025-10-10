@@ -62,7 +62,8 @@ import { IyzicoClient } from '@kaanmertkoc/iyzico-subs-ts';
 const iyzico = new IyzicoClient({
   apiKey: process.env.IYZICO_API_KEY!,
   secretKey: process.env.IYZICO_SECRET_KEY!,
-  isSandbox: process.env.NODE_ENV !== 'production'
+  isSandbox: process.env.NODE_ENV !== 'production',
+  debug: process.env.NODE_ENV === 'development' // Enable debug logging in development
 });
 
 // Create a subscription product
@@ -113,7 +114,7 @@ const subscription = await iyzico.subscriptions.create({
 
 Explore the complete API reference with interactive examples:
 
-- **📖 Interactive Docs**: [iyzico-docs.kaanmertkoc.com](https://iyzico-docs.kaanmertkoc.com) _(Coming Soon)_
+- **📖 Interactive Docs**: [iyzico-docs.kaanmertkoc.com](https://iyzico-docs.kaanmertkoc.com)
 - **📄 OpenAPI Spec**: [View on GitHub](https://github.com/kaanmertkoc/iyzico-subscription-ts/blob/main/openapi/openapi.yaml)
 - **⬇️ Download Spec**: [openapi.yaml](https://raw.githubusercontent.com/kaanmertkoc/iyzico-subscription-ts/main/openapi/openapi.yaml)
 
@@ -195,10 +196,11 @@ new IyzicoClient({
   
   // Optional: Environment settings
   isSandbox?: boolean;          // Use sandbox API (default: false)
+  debug?: boolean;              // Enable debug logging (default: false)
+                                // Recommended: process.env.NODE_ENV === 'development'
   baseUrl?: string;             // Custom API base URL
   timeout?: number;             // Request timeout in ms (default: 30000)
   maxRetries?: number;          // Max retry attempts (default: 3)
-  debug?: boolean;              // Enable debug logging (default: false)
   
   // Optional: Custom headers
   userAgent?: string;           // Custom user agent
@@ -218,7 +220,8 @@ import { IyzicoClient } from '@kaanmertkoc/iyzico-subs-ts';
 const iyzico = new IyzicoClient({
   apiKey: process.env.IYZICO_API_KEY!,
   secretKey: process.env.IYZICO_SECRET_KEY!,
-  isSandbox: process.env.NODE_ENV !== 'production'
+  isSandbox: process.env.NODE_ENV !== 'production',
+  debug: process.env.NODE_ENV === 'development'
 });
 
 export default async function handler(req, res) {
@@ -262,6 +265,95 @@ export default async function handler(request) {
   return Response.json(result);
 }
 ```
+
+## 🐛 Known Issues
+
+### 1. Plans UPDATE Endpoint - Limited Fields
+
+**Limitation**: The UPDATE endpoint for pricing plans only allows updating **`name`** and **`trialPeriodDays`** fields.
+
+**Official Statement** (from Iyzico docs):
+> "Bu metod sadece name ve trialPeriodDays parametrelerinin güncellenmesine izin verir."
+> (This method only allows updating the name and trialPeriodDays parameters.)
+
+**Fields That Cannot Be Updated:**
+- ❌ `status` - Cannot change to INACTIVE via API
+- ❌ `paymentInterval` - Cannot be modified after creation  
+- ❌ `price` - Cannot be changed after creation
+- ❌ `currencyCode` - Cannot be changed after creation
+- ❌ `recurrenceCount` - Cannot be changed after creation
+- ❌ `planPaymentType` - Cannot be changed after creation
+
+**Evidence:**
+```typescript
+// Attempt to update status - silently ignored
+await iyzico.plans.update('plan-123', { 
+  status: 'INACTIVE',
+  name: 'Updated Name'
+});
+// Result: Only name is updated, status remains ACTIVE
+
+// Attempt to update paymentInterval - silently ignored  
+await iyzico.plans.update('plan-123', {
+  paymentInterval: 'YEARLY',
+  name: 'Updated Name'
+});
+// Result: Only name is updated, paymentInterval remains unchanged
+```
+
+**Workarounds:**
+1. **For status changes**: Manage plan availability in your application layer
+2. **For price changes**: Create a new plan with the new price
+3. **For interval changes**: Create a new plan with the new interval
+4. **Migration**: Update existing subscriptions to use the new plan
+
+**SDK Behavior:**
+- The SDK accepts all update parameters for flexibility
+- Only `name` and `trialPeriodDays` will actually be updated by Iyzico
+- Other fields are sent but silently ignored by the API
+- No error is returned for ignored fields
+
+---
+
+### 2. Plans DELETE Endpoint Non-Functional
+
+**Critical Issue**: The DELETE endpoint for pricing plans (`DELETE /v2/subscription/pricing-plans/{id}`) appears to be **not implemented** on Iyzico's API.
+
+**Symptoms:**
+- Returns `404` status code with `errorCode: "1"` (System error)
+- Error message: "Sistem hatası" (System error)
+- Occurs even when the plan **exists** (confirmed via GET/LIST endpoints)
+
+**Evidence:**
+```typescript
+// Plan exists - confirmed via list
+const plans = await iyzico.plans.list(productId);
+// Returns: [{ referenceCode: 'abc-123', status: 'ACTIVE', ... }]
+
+// Attempt to delete returns error
+await iyzico.plans.delete('abc-123');
+// Throws: IyzicoApiError with statusCode 404, errorCode "1"
+```
+
+**Workarounds:**
+1. **Recommended**: Update plan status to inactive instead of deleting:
+   ```typescript
+   await iyzico.plans.update(planId, { 
+     /* update with inactive status if supported */
+   });
+   ```
+2. Handle deletion in your application layer (soft delete)
+3. Contact Iyzico support to report the issue
+
+**SDK Behavior:**
+- The SDK correctly implements the DELETE request
+- Enhanced error handling detects this as a "business constraint" error
+- Debug mode logs a warning when calling this endpoint
+- `error.isBusinessConstraintError()` returns `true` for this scenario
+
+See [GitHub Issues](https://github.com/kaanmertkoc/iyzico-subscription-ts/issues) to track this issue.
+
+---
 
 ## ⚠️ Sandbox Limitations
 
@@ -371,7 +463,7 @@ if (iyzico.isSandbox) {
 
 ## ⚡ Error Handling
 
-The SDK provides structured error handling with user-friendly messages:
+The SDK provides structured error handling with user-friendly messages and helpful debugging methods:
 
 ```typescript
 import { 
@@ -392,23 +484,58 @@ try {
   // General API errors (4xx, 5xx)
   else if (error instanceof IyzicoApiError) {
     console.error('API Error:', {
+      // Basic error info
       statusCode: error.statusCode,
-      message: error.message,
-      userFriendlyMessage: error.getUserFriendlyMessage(),
       errorCode: error.errorCode,
-      category: error.getCategory(),
-      isRetryable: error.isRetryable()
+      message: error.message,
+      
+      // User-friendly message for displaying to end users
+      userFriendlyMessage: error.getUserFriendlyMessage(),
+      
+      // Error classification
+      category: error.getCategory(), // 'authentication', 'validation', etc.
+      isRetryable: error.isRetryable(),
+      isClientError: error.isClientError(),
+      isServerError: error.isServerError(),
+      
+      // Special handling for business constraints (e.g., plan deletion)
+      isBusinessConstraint: error.isBusinessConstraintError(),
+      contextualMessage: error.getContextualMessage('plan', 'plan-123'),
+      suggestion: error.getSuggestion('delete'),
+      
+      // Request details for debugging
+      url: error.url,
+      method: error.method,
+      requestId: error.requestId,
     });
   }
   // Network errors (timeout, connection issues)
   else if (error instanceof IyzicoNetworkError) {
     console.error('Network Error:', {
       message: error.message,
-      isTimeout: error.isTimeout
+      isTimeout: error.isTimeout,
+      requestId: error.requestId
     });
   }
 }
 ```
+
+### Available Error Methods
+
+All `IyzicoApiError` instances provide these helpful methods:
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getUserFriendlyMessage()` | `string` | Safe message to display to end users |
+| `getCategory()` | `ErrorCategory` | Error category (authentication, validation, etc.) |
+| `isRetryable()` | `boolean` | Whether the request should be retried |
+| `isClientError()` | `boolean` | True for 4xx errors |
+| `isServerError()` | `boolean` | True for 5xx errors |
+| `isBusinessConstraintError()` | `boolean` | True for 404 + errorCode "1" (business rules) |
+| `isNotFoundError()` | `boolean` | True for real 404s (resource doesn't exist) |
+| `getContextualMessage(operation?, resourceId?)` | `string` | Operation-specific error message |
+| `getSuggestion(operation?)` | `string` | Actionable suggestions for fixing the error |
+| `toJSON()` | `object` | Complete error details for logging |
 
 ### Error Types
 
@@ -417,8 +544,7 @@ try {
 | `IyzicoSandboxLimitationError` | Subscription routes in sandbox (422 + code "100001") | ❌ No - Use production |
 | `IyzicoApiError` | API validation/business logic errors (4xx/5xx) | Depends on status |
 | `IyzicoNetworkError` | Network issues, timeouts, DNS failures | ✅ Yes |
-| `IyzicoValidationError` | Invalid request parameters (400) | ❌ No - Fix request |
-| `IyzicoAuthenticationError` | Invalid credentials (401) | ❌ No - Check credentials |
+| `IyzicoConfigError` | Invalid SDK configuration | ❌ No - Fix configuration |
 
 ## 🛠️ Development
 

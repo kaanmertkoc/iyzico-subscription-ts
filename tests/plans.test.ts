@@ -17,6 +17,7 @@ import { PlanPaymentType } from '../src/types/plans';
 // Create a mock client
 const mockClient = {
   request: vi.fn(),
+  getConfig: vi.fn().mockReturnValue({ debug: false }),
 } as unknown as IyzicoClient;
 
 describe('PlansService', () => {
@@ -390,6 +391,69 @@ describe('PlansService', () => {
           expect(error.isClientError()).toBe(true);
         }
       }
+    });
+
+    test('should accept status and paymentInterval params but only name and trialPeriodDays are actually updated (Iyzico API limitation)', async () => {
+      // Arrange
+      // This test documents the known limitation that only name and trialPeriodDays
+      // can be updated according to Iyzico's official documentation.
+      // Other fields are silently ignored by the API.
+      const pricingPlanReferenceCode = 'PLAN_LIMITATION_TEST';
+      const updateParams = {
+        name: 'Updated Name',
+        trialPeriodDays: 14,
+        status: Status.INACTIVE, // This will be ignored by Iyzico API
+        paymentInterval: PaymentInterval.YEARLY, // This will be ignored by Iyzico API
+      };
+
+      // Mock response shows that only name and trialPeriodDays were actually updated
+      // status remains ACTIVE and paymentInterval remains unchanged
+      const mockResponse: UpdatePaymentPlanResponse = {
+        status: 'success',
+        systemTime: 1640995200000,
+        data: {
+          referenceCode: pricingPlanReferenceCode,
+          createdDate: 1640995200000,
+          name: 'Updated Name', // ✅ This was updated
+          price: 29.99,
+          paymentInterval: PaymentInterval.MONTHLY, // ❌ Still MONTHLY (not YEARLY)
+          paymentIntervalCount: 1,
+          trialPeriodDays: 14, // ✅ This was updated
+          currencyCode: CurrencyCode.TRY,
+          productReferenceCode: 'PROD_123',
+          planPaymentType: PlanPaymentType.RECURRING,
+          status: Status.ACTIVE, // ❌ Still ACTIVE (not INACTIVE)
+          recurrenceCount: 12,
+        },
+      };
+
+      mockClient.request = vi.fn().mockResolvedValue(mockResponse);
+
+      // Act
+      const result = await plansService.update(
+        pricingPlanReferenceCode,
+        updateParams
+      );
+
+      // Assert - SDK sends all params, but API only applies name and trialPeriodDays
+      expect(mockClient.request).toHaveBeenCalledWith({
+        path: `/v2/subscription/pricing-plans/${pricingPlanReferenceCode}`,
+        method: 'POST',
+        body: {
+          conversationId: expect.stringMatching(/^plan-update-\d+$/),
+          pricingPlanReferenceCode,
+          name: 'Updated Name',
+          trialPeriodDays: 14,
+          status: Status.INACTIVE, // Sent but ignored by API
+          paymentInterval: PaymentInterval.YEARLY, // Sent but ignored by API
+        },
+      });
+
+      // Verify the response shows only name and trialPeriodDays were updated
+      expect(result.data?.name).toBe('Updated Name'); // ✅ Updated
+      expect(result.data?.trialPeriodDays).toBe(14); // ✅ Updated
+      expect(result.data?.status).toBe(Status.ACTIVE); // ❌ Not updated (API limitation)
+      expect(result.data?.paymentInterval).toBe(PaymentInterval.MONTHLY); // ❌ Not updated (API limitation)
     });
   });
 

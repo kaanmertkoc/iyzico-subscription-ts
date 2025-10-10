@@ -302,7 +302,7 @@ This example can be forked and used as a standalone project:
 
 ## 📚 Learn More
 
-- [Iyzico API Documentation](https://dev.iyzipay.com/)
+- [Iyzico API Documentation](https://docs.iyzico.com/)
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Drizzle ORM Docs](https://orm.drizzle.team/)
 - [@kaanmertkoc/iyzico-subs-ts](https://www.npmjs.com/package/@kaanmertkoc/iyzico-subs-ts)
