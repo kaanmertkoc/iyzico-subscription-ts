@@ -40,13 +40,13 @@ export class PlansService {
 
   /**
    * Updates an existing payment plan
-   * 
+   *
    * **⚠️ LIMITATION: Only `name` and `trialPeriodDays` can be updated**
-   * 
+   *
    * According to Iyzico's documentation, the update endpoint only supports modifying:
    * - `name`: The display name of the plan
    * - `trialPeriodDays`: The trial period duration
-   * 
+   *
    * **Fields that CANNOT be updated:**
    * - `status`: Cannot be changed via API (remains ACTIVE)
    * - `paymentInterval`: Cannot be modified after creation
@@ -54,17 +54,17 @@ export class PlansService {
    * - `currencyCode`: Cannot be changed after creation
    * - `recurrenceCount`: Cannot be changed after creation
    * - `planPaymentType`: Cannot be changed after creation
-   * 
+   *
    * **Workaround for status changes:**
    * - To "deactivate" a plan, use the plan's `delete()` method (though it has known issues)
    * - Alternatively, manage plan status in your application layer
-   * 
+   *
    * **Note:** Active subscriptions are not affected by plan updates.
-   * 
+   *
    * @param pricingPlanReferenceCode - The pricing plan reference code to update
    * @param params - Payment plan update parameters (only name and trialPeriodDays are effective)
    * @returns Promise resolving to the updated payment plan data
-   * @see https://dev.iyzipay.com/tr/abonelik/subscriptions-api - Official documentation
+   * @see https://docs.iyzico.com/urunler/abonelik/abonelik-entegrasyonu/odeme-plani#post-v2-subscription-pricing-plans-pricingplanreferencecode - Official documentation
    */
   async update(
     pricingPlanReferenceCode: string,
@@ -94,12 +94,8 @@ export class PlansService {
    * - Message: "Sistem hatası"
    *
    * This occurs even when the plan exists and is confirmed via the list/retrieve endpoints.
-   * This suggests the endpoint is not properly implemented on Iyzico's side.
-   *
-   * **Recommended alternatives:**
-   * 1. Update the plan status to inactive using `update()` method
-   * 2. Contact Iyzico support to report the issue
-   * 3. Handle the deletion state in your application layer
+   * Also update endpoint is not working as expected as stated in the documentation.
+   * So we can not make a payment plan inactive therefore we can not delete a payment plan.
    *
    * @param pricingPlanReferenceCode - The pricing plan reference code to delete
    * @returns Promise resolving to the deletion response

@@ -295,7 +295,7 @@ The example will automatically use the local SDK build.
 ## 📚 Learn More
 
 - [Hono Documentation](https://hono.dev/)
-- [Iyzico API Docs](https://dev.iyzipay.com/)
+- [Iyzico API Docs](https://docs.iyzico.com/)
 - [@kaanmertkoc/iyzico-subs-ts SDK](https://www.npmjs.com/package/@kaanmertkoc/iyzico-subs-ts)
 - [Bun Documentation](https://bun.sh/docs)
 
