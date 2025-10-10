@@ -157,9 +157,12 @@ function displayResults(current: SizeEntry, previous?: SizeEntry) {
     const zippedPercent = ((zippedDiff / previous.zipped) * 100).toFixed(2);
     const unzippedPercent = ((unzippedDiff / previous.unzipped) * 100).toFixed(2);
     
+    const zippedSign = zippedDiff >= 0 ? '+' : '-';
+    const unzippedSign = unzippedDiff >= 0 ? '+' : '-';
+    
     console.log('\n📈 Comparison with v' + previous.version + ':');
-    console.log(`   Zipped:     ${zippedDiff >= 0 ? '+' : ''}${formatBytes(zippedDiff)} (${zippedPercent}%)`);
-    console.log(`   Unzipped:   ${unzippedDiff >= 0 ? '+' : ''}${formatBytes(unzippedDiff)} (${unzippedPercent}%)`);
+    console.log(`   Zipped:     ${zippedSign}${formatBytes(Math.abs(zippedDiff))} (${zippedPercent}%)`);
+    console.log(`   Unzipped:   ${unzippedSign}${formatBytes(Math.abs(unzippedDiff))} (${unzippedPercent}%)`);
     
     if (zippedDiff > 0) {
       console.log('\n⚠️  Package size increased');
@@ -208,7 +211,8 @@ function displayHistory(history: SizeHistory) {
       const diff = entry.zipped - prev.zipped;
       const percent = ((diff / prev.zipped) * 100).toFixed(2);
       const symbol = diff > 0 ? '📈' : diff < 0 ? '📉' : '➡️';
-      console.log(`  ${symbol} ${diff >= 0 ? '+' : ''}${formatBytes(diff)} (${percent}%) vs v${prev.version}`);
+      const sign = diff >= 0 ? '+' : '-';
+      console.log(`  ${symbol} ${sign}${formatBytes(Math.abs(diff))} (${percent}%) vs v${prev.version}`);
     }
     
     if (i < sorted.length - 1) {
