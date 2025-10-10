@@ -1,4 +1,8 @@
-import { ErrorCategory, IyzicoErrorUtils } from '@kaanmertkoc/iyzico-subs-ts';
+import {
+  ErrorCategory,
+  IyzicoError,
+  IyzicoApiError,
+} from '@kaanmertkoc/iyzico-subs-ts';
 import { Context } from 'hono';
 
 /**
@@ -46,14 +50,17 @@ export class IyzicoErrorHandler {
   } {
     const timestamp = Date.now();
 
-    // Use SDK utilities for consistent error handling
-    const category = IyzicoErrorUtils.getErrorCategory(error);
-    const userMessage = IyzicoErrorUtils.getUserFriendlyMessage(error);
-    const isRetryable = IyzicoErrorUtils.isRetryable(error);
-
     // Handle Iyzico SDK errors with enhanced information from SDK
-    if (IyzicoErrorUtils.isIyzicoError(error)) {
-      const statusCode = IyzicoErrorUtils.isApiError(error)
+    if (error instanceof IyzicoError) {
+      // Get error details from the error instance
+      const isApiError = error instanceof IyzicoApiError;
+      const category = isApiError ? error.getCategory() : ErrorCategory.UNKNOWN;
+      const userMessage = isApiError
+        ? error.getUserFriendlyMessage()
+        : 'An unexpected error occurred';
+      const isRetryable = isApiError ? error.isRetryable() : false;
+
+      const statusCode = isApiError
         ? this.mapStatusCode(error.statusCode)
         : this.getStatusCodeFromCategory(category);
 
@@ -64,13 +71,13 @@ export class IyzicoErrorHandler {
             type: this.getErrorTypeFromCategory(category),
             message: error.message,
             userMessage,
-            ...(IyzicoErrorUtils.isApiError(error) && {
+            ...(isApiError && {
               code: error.errorCode,
               group: error.errorGroup,
             }),
             ...(error.requestId && { requestId: error.requestId }),
             ...(this.isDevelopment && {
-              details: this.getErrorDetails(error),
+              details: error.toJSON(),
             }),
           },
           timestamp,
@@ -118,7 +125,6 @@ export class IyzicoErrorHandler {
             message: this.isDevelopment
               ? error.message
               : 'An unexpected error occurred',
-            userMessage,
             ...(this.isDevelopment && {
               details: {
                 name: error.name,
@@ -140,7 +146,6 @@ export class IyzicoErrorHandler {
         error: {
           type: 'UNKNOWN_ERROR',
           message: 'An unexpected error occurred',
-          userMessage,
           ...(this.isDevelopment && {
             details: {
               originalError: error,
@@ -205,13 +210,6 @@ export class IyzicoErrorHandler {
   }
 
   /**
-   * Gets detailed error information for development mode
-   */
-  private getErrorDetails(error: unknown): Record<string, unknown> {
-    return IyzicoErrorUtils.formatForLogging(error);
-  }
-
-  /**
    * Maps Iyzico API status codes to appropriate HTTP response codes for client
    * Some API errors should be mapped differently for better UX
    */
@@ -253,12 +251,9 @@ export class IyzicoErrorHandler {
       } catch (error) {
         const { response, statusCode } = this.handleError(error);
 
-        // Log the error for monitoring using SDK's safe logging utility
-        if (IyzicoErrorUtils.isIyzicoError(error)) {
-          console.error(
-            'Iyzico SDK Error:',
-            IyzicoErrorUtils.formatForLogging(error)
-          );
+        // Log the error for monitoring
+        if (error instanceof IyzicoError) {
+          console.error('Iyzico SDK Error:', error.toJSON());
         } else {
           console.error('Unexpected Error:', error);
         }
