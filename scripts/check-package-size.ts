@@ -8,7 +8,15 @@
  */
 
 import { execSync } from 'child_process';
-import { existsSync, readFileSync, writeFileSync, mkdirSync, rmSync, statSync } from 'fs';
+import {
+  existsSync,
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+  rmSync,
+  statSync,
+  readdirSync,
+} from 'fs';
 import { join } from 'path';
 
 interface SizeEntry {
@@ -37,7 +45,9 @@ function formatBytes(bytes: number): string {
 }
 
 function getPackageVersion(): string {
-  const packageJson = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf-8'));
+  const packageJson = JSON.parse(
+    readFileSync(join(process.cwd(), 'package.json'), 'utf-8')
+  );
   return packageJson.version;
 }
 
@@ -48,14 +58,11 @@ function cleanupTempFiles() {
 }
 
 function getDirectorySize(dirPath: string): number {
-  const { readdirSync, statSync } = require('fs');
-  const { join } = require('path');
-  
   let totalSize = 0;
-  
+
   function calculateSize(path: string) {
     const stat = statSync(path);
-    
+
     if (stat.isFile()) {
       totalSize += stat.size;
     } else if (stat.isDirectory()) {
@@ -65,7 +72,7 @@ function getDirectorySize(dirPath: string): number {
       }
     }
   }
-  
+
   calculateSize(dirPath);
   return totalSize;
 }
@@ -107,7 +114,14 @@ function checkPackageSize(): SizeEntry {
     
     // Extract tarball to measure uncompressed size
     mkdirSync(TEMP_DIR, { recursive: true });
-    execSync(`tar -xzf ${tarballName} -C ${TEMP_DIR}`);
+    try {
+      execSync(`tar -xzf ${tarballName} -C ${TEMP_DIR}`, { stdio: 'pipe' });
+    } catch (error) {
+      console.error('\n❌ Error: tar command failed.');
+      console.error('This script requires tar to be installed (available on macOS/Linux).');
+      console.error('If you\'re on Windows, use WSL or Git Bash.\n');
+      throw error;
+    }
     
     // Get uncompressed size (cross-platform)
     const unzippedSize = getDirectorySize(TEMP_DIR);
