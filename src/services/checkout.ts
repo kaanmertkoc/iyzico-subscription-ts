@@ -58,7 +58,6 @@ export class CheckoutService {
       body: requestBody,
     });
 
-    // Merge client_reference_id into the response if it exists
     if (this.client_reference_id) {
       return {
         ...response,
@@ -105,7 +104,6 @@ export class CheckoutService {
       body: requestBody,
     });
 
-    // Merge client_reference_id into the response if it exists
     if (this.client_reference_id) {
       return {
         ...response,
@@ -130,7 +128,6 @@ export class CheckoutService {
       },
     });
 
-    // Merge client_reference_id into the response if it exists
     if (this.client_reference_id) {
       return {
         ...response,
@@ -154,7 +151,6 @@ export class CheckoutService {
       callbackUrl: params.callbackUrl,
     };
 
-    // Add either subscriptionReferenceCode or customerReferenceCode
     if (params.subscriptionReferenceCode) {
       requestBody.subscriptionReferenceCode = params.subscriptionReferenceCode;
     }
