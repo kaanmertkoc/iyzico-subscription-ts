@@ -13,6 +13,12 @@ import type {
  * Service for managing checkout forms in the Iyzico subscription system
  */
 export class CheckoutService {
+  /**
+   * Client reference ID can be used to store the client reference ID in easy way for handling callbacks
+   * @private
+   */
+  private client_reference_id: undefined | string = undefined;
+
   constructor(private client: IyzicoClient) {}
 
   /**
@@ -23,6 +29,7 @@ export class CheckoutService {
   async initialize(
     params: InitializeCheckoutRequest
   ): Promise<CheckoutFormResponse> {
+    this.client_reference_id = params.clientReferenceId || undefined;
     // Transform the customer data to match Iyzico's expected format
     const customer = {
       name: params.name,
@@ -45,11 +52,20 @@ export class CheckoutService {
       customer,
     };
 
-    return this.client.request<CheckoutFormResponse>({
+    const response = await this.client.request<CheckoutFormResponse>({
       path: '/v2/subscription/checkoutform/initialize',
       method: 'POST',
       body: requestBody,
     });
+
+    // Merge client_reference_id into the response if it exists
+    if (this.client_reference_id) {
+      return {
+        ...response,
+        clientReferenceId: this.client_reference_id,
+      };
+    }
+    return response;
   }
 
   /**
@@ -60,6 +76,7 @@ export class CheckoutService {
   async initializeSubscription(
     params: InitializeSubscriptionRequest
   ): Promise<InitializeSubscriptionResponse> {
+    this.client_reference_id = params.clientReferenceId || undefined;
     // Transform the customer data to match Iyzico's expected format
     const customer = {
       name: params.name,
@@ -82,11 +99,20 @@ export class CheckoutService {
       paymentCard: params.paymentCard,
     };
 
-    return this.client.request<InitializeSubscriptionResponse>({
+    const response = await this.client.request<InitializeSubscriptionResponse>({
       path: '/v2/subscription/initialize',
       method: 'POST',
       body: requestBody,
     });
+
+    // Merge client_reference_id into the response if it exists
+    if (this.client_reference_id) {
+      return {
+        ...response,
+        clientReferenceId: this.client_reference_id,
+      };
+    }
+    return response;
   }
 
   /**
@@ -94,8 +120,8 @@ export class CheckoutService {
    * @param token - The checkout form token received from the callback
    * @returns Promise resolving to the checkout form result data
    */
-  async retrieve(token: string): Promise<BaseResponse<SubscriptionInitData>> {
-    return this.client.request<BaseResponse<SubscriptionInitData>>({
+  async retrieve(token: string): Promise<BaseResponse<SubscriptionInitData> & { clientReferenceId?: string }> {
+    const response = await this.client.request<BaseResponse<SubscriptionInitData>>({
       path: `/v2/subscription/checkoutform/${token}`,
       method: 'POST',
       body: {
@@ -103,6 +129,15 @@ export class CheckoutService {
         token,
       },
     });
+
+    // Merge client_reference_id into the response if it exists
+    if (this.client_reference_id) {
+      return {
+        ...response,
+        clientReferenceId: this.client_reference_id,
+      };
+    }
+    return response;
   }
 
   /**
