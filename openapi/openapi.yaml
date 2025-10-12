@@ -146,6 +146,64 @@ info:
     console.log(plans.data.items); // Array of plans
     ```
     
+    ### Checkout & Payment
+    ```typescript
+    // Create 3DS checkout form (recommended for production)
+    const checkout = await iyzico.checkout.initialize({
+      pricingPlanReferenceCode: 'PLAN_123',
+      callbackUrl: 'https://yourdomain.com/api/checkout/callback',
+      clientReferenceId: 'order_12345', // Track this checkout session
+      name: 'John',
+      surname: 'Doe',
+      email: 'john@example.com',
+      gsmNumber: '+905551234567',
+      identityNumber: '11111111111',
+      billingAddress: {
+        contactName: 'John Doe',
+        country: 'Turkey',
+        city: 'Istanbul',
+        address: 'Example Address 123'
+      },
+      shippingAddress: {
+        contactName: 'John Doe',
+        country: 'Turkey',
+        city: 'Istanbul',
+        address: 'Example Address 123'
+      }
+    });
+    
+    // Display the checkout form
+    const formHtml = checkout.data.checkoutFormContent;
+    const clientRef = checkout.clientReferenceId; // 'order_12345'
+    
+    // Retrieve checkout result after payment
+    const result = await iyzico.checkout.retrieve(tokenFromCallback);
+    if (result.status === 'success') {
+      console.log('Subscription:', result.data);
+      console.log('Your reference:', result.clientReferenceId);
+    }
+    
+    // Create NON-3DS subscription (direct payment)
+    const subscription = await iyzico.checkout.initializeSubscription({
+      pricingPlanReferenceCode: 'PLAN_123',
+      clientReferenceId: 'order_12345',
+      name: 'John',
+      surname: 'Doe',
+      email: 'john@example.com',
+      gsmNumber: '+905551234567',
+      identityNumber: '11111111111',
+      paymentCard: {
+        cardHolderName: 'John Doe',
+        cardNumber: '5528790000000008',
+        expireMonth: '12',
+        expireYear: '2030',
+        cvc: '123'
+      },
+      billingAddress: { /* ... */ },
+      shippingAddress: { /* ... */ }
+    });
+    ```
+    
     ### Subscriptions
     ```typescript
     // List subscriptions (paginated)
@@ -157,20 +215,6 @@ info:
     
     // Cancel a subscription
     await iyzico.subscriptions.cancel('SUB_123');
-    ```
-    
-    ### Customers
-    ```typescript
-    // List customers (paginated)
-    const customers = await iyzico.customers.list();
-    console.log(customers.data.items); // Array of customers
-    
-    // Update a customer
-    await iyzico.customers.update('CUST_123', {
-      name: 'John',
-      surname: 'Doe',
-      email: 'john@example.com'
-    });
     ```
     
     ---
