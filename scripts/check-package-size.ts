@@ -250,20 +250,23 @@ if (command === 'history') {
   
   // Check if this version already exists
   const existingIndex = history.entries.findIndex(e => e.version === current.version);
-  const previous = history.entries[history.entries.length - 1];
   
   if (existingIndex >= 0) {
-    // Update existing entry
-    history.entries[existingIndex] = current;
-    console.log(`✅ Updated size tracking for v${current.version}\n`);
+    // Version already exists - don't add duplicate
+    console.log(`⚠️  v${current.version} already tracked. Skipping...`);
+    console.log(`💡 Tip: Bump the version in package.json to track a new version\n`);
+    
+    const previous = history.entries[existingIndex - 1];
+    displayResults(current, previous);
   } else {
     // Add new entry
     history.entries.push(current);
+    const previous = history.entries[history.entries.length - 2]; // Get the one before current
+    
+    saveHistory(history);
     console.log(`✅ Saved size tracking for v${current.version}\n`);
+    displayResults(current, previous);
   }
-  
-  saveHistory(history);
-  displayResults(current, previous);
 } else {
   // Default: just check and display (don't save)
   const current = checkPackageSize();
