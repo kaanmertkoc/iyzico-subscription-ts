@@ -146,6 +146,64 @@ info:
     console.log(plans.data.items); // Array of plans
     ```
     
+    ### Checkout & Payment
+    ```typescript
+    // Create 3DS checkout form (recommended for production)
+    const checkout = await iyzico.checkout.initialize({
+      pricingPlanReferenceCode: 'PLAN_123',
+      callbackUrl: 'https://yourdomain.com/api/checkout/callback',
+      clientReferenceId: 'order_12345', // Track this checkout session
+      name: 'John',
+      surname: 'Doe',
+      email: 'john@example.com',
+      gsmNumber: '+905551234567',
+      identityNumber: '11111111111',
+      billingAddress: {
+        contactName: 'John Doe',
+        country: 'Turkey',
+        city: 'Istanbul',
+        address: 'Example Address 123'
+      },
+      shippingAddress: {
+        contactName: 'John Doe',
+        country: 'Turkey',
+        city: 'Istanbul',
+        address: 'Example Address 123'
+      }
+    });
+    
+    // Display the checkout form
+    const formHtml = checkout.data.checkoutFormContent;
+    const clientRef = checkout.clientReferenceId; // 'order_12345'
+    
+    // Retrieve checkout result after payment
+    const result = await iyzico.checkout.retrieve(tokenFromCallback);
+    if (result.status === 'success') {
+      console.log('Subscription:', result.data);
+      console.log('Your reference:', result.clientReferenceId);
+    }
+    
+    // Create NON-3DS subscription (direct payment)
+    const subscription = await iyzico.checkout.initializeSubscription({
+      pricingPlanReferenceCode: 'PLAN_123',
+      clientReferenceId: 'order_12345',
+      name: 'John',
+      surname: 'Doe',
+      email: 'john@example.com',
+      gsmNumber: '+905551234567',
+      identityNumber: '11111111111',
+      paymentCard: {
+        cardHolderName: 'John Doe',
+        cardNumber: '5528790000000008',
+        expireMonth: '12',
+        expireYear: '2030',
+        cvc: '123'
+      },
+      billingAddress: { /* ... */ },
+      shippingAddress: { /* ... */ }
+    });
+    ```
+    
     ### Subscriptions
     ```typescript
     // List subscriptions (paginated)
@@ -157,20 +215,6 @@ info:
     
     // Cancel a subscription
     await iyzico.subscriptions.cancel('SUB_123');
-    ```
-    
-    ### Customers
-    ```typescript
-    // List customers (paginated)
-    const customers = await iyzico.customers.list();
-    console.log(customers.data.items); // Array of customers
-    
-    // Update a customer
-    await iyzico.customers.update('CUST_123', {
-      name: 'John',
-      surname: 'Doe',
-      email: 'john@example.com'
-    });
     ```
     
     ---
@@ -395,7 +439,7 @@ info:
     ## 📖 About This Documentation
     
     This OpenAPI specification documents the SDK methods you'll use. The endpoints shown are the underlying Iyzico API routes, but you'll interact with them through the SDK's clean interface (e.g., `iyzico.products.create()` instead of manually calling `/v2/subscription/products`).
-  version: 1.0.3
+  version: 1.0.4
   contact:
     name: Kaan Mert Koç
     url: https://github.kaanmertkoc.com
@@ -1582,6 +1626,9 @@ components:
               pattern: '^[0-9]{11}$'
               minLength: 11
               maxLength: 11
+            clientReferenceId:
+              type: string
+              description: Optional client reference ID for tracking checkout sessions in callbacks (similar to Stripe's client_reference_id)
             billingAddress:
               $ref: '#/components/schemas/Address'
             shippingAddress:
@@ -1623,6 +1670,9 @@ components:
               pattern: '^[0-9]{11}$'
               minLength: 11
               maxLength: 11
+            clientReferenceId:
+              type: string
+              description: Optional client reference ID for tracking subscription initialization in callbacks (similar to Stripe's client_reference_id)
             billingAddress:
               $ref: '#/components/schemas/Address'
             shippingAddress:
@@ -1650,6 +1700,9 @@ components:
         - $ref: '#/components/schemas/BaseResponse'
         - type: object
           properties:
+            clientReferenceId:
+              type: string
+              description: Client reference ID if provided in the request
             data:
               type: object
               properties:
@@ -1666,6 +1719,9 @@ components:
         - $ref: '#/components/schemas/BaseResponse'
         - type: object
           properties:
+            clientReferenceId:
+              type: string
+              description: Client reference ID if provided in the request
             data:
               type: object
               properties:

@@ -22,6 +22,7 @@ export interface InitializeCheckoutRequest extends BaseRequest, BaseCustomer {
   subscriptionInitialStatus?: 'PENDING' | 'ACTIVE';
   gsmNumber: string;
   identityNumber: string;
+  clientReferenceId?: string;
 }
 
 /**
@@ -53,6 +54,7 @@ export interface InitializeSubscriptionRequest
   paymentCard: PaymentCard;
   gsmNumber: string;
   identityNumber: string;
+  clientReferenceId?: string;
 }
 
 /**
@@ -89,10 +91,13 @@ export interface CheckoutFormResponse extends BaseResponse<CheckoutFormData> {
   checkoutFormContent?: string;
   token?: string;
   tokenExpireTime?: number;
+  clientReferenceId?: string;
 }
 
 /**
  * Response data when initializing subscription
  */
 export interface InitializeSubscriptionResponse
-  extends BaseResponse<SubscriptionInitData> {}
+  extends BaseResponse<SubscriptionInitData> {
+  clientReferenceId?: string;
+}

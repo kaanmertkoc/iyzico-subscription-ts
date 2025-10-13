@@ -495,6 +495,94 @@ describe('CheckoutService', () => {
       ).toBe('İstanbul');
     });
 
+    test('should handle clientReferenceId when provided', async () => {
+      // Arrange
+      const initializeRequest: InitializeCheckoutRequest = {
+        name: 'Reference',
+        surname: 'Test',
+        email: 'reference.test@example.com',
+        gsmNumber: '5551234567',
+        identityNumber: '10101010101',
+        pricingPlanReferenceCode: 'PLAN_REF',
+        callbackUrl: 'https://example.com/callback',
+        clientReferenceId: 'custom_ref_12345',
+        billingAddress: {
+          contactName: 'Reference Test',
+          country: 'Turkey',
+          city: 'Istanbul',
+          address: 'Test Address',
+        },
+        shippingAddress: {
+          contactName: 'Reference Test',
+          country: 'Turkey',
+          city: 'Istanbul',
+          address: 'Test Address',
+        },
+      };
+
+      const mockResponse: CheckoutFormResponse = {
+        status: 'success',
+        systemTime: 1640995200000,
+        data: {
+          checkoutFormContent: '<html>...</html>',
+          token: 'checkout_token_ref',
+        },
+      };
+
+      mockClient.request = vi.fn().mockResolvedValue(mockResponse);
+
+      // Act
+      const result = await checkoutService.initialize(initializeRequest);
+
+      // Assert
+      expect(result.clientReferenceId).toBe('custom_ref_12345');
+      expect(result.status).toBe('success');
+    });
+
+    test('should handle missing clientReferenceId gracefully', async () => {
+      // Arrange
+      const initializeRequest: InitializeCheckoutRequest = {
+        name: 'NoRef',
+        surname: 'Test',
+        email: 'noref.test@example.com',
+        gsmNumber: '5551234567',
+        identityNumber: '20202020202',
+        pricingPlanReferenceCode: 'PLAN_NOREF',
+        callbackUrl: 'https://example.com/callback',
+        // clientReferenceId is intentionally omitted
+        billingAddress: {
+          contactName: 'NoRef Test',
+          country: 'Turkey',
+          city: 'Istanbul',
+          address: 'Test Address',
+        },
+        shippingAddress: {
+          contactName: 'NoRef Test',
+          country: 'Turkey',
+          city: 'Istanbul',
+          address: 'Test Address',
+        },
+      };
+
+      const mockResponse: CheckoutFormResponse = {
+        status: 'success',
+        systemTime: 1640995200000,
+        data: {
+          checkoutFormContent: '<html>...</html>',
+          token: 'checkout_token_noref',
+        },
+      };
+
+      mockClient.request = vi.fn().mockResolvedValue(mockResponse);
+
+      // Act
+      const result = await checkoutService.initialize(initializeRequest);
+
+      // Assert
+      expect(result.clientReferenceId).toBeUndefined();
+      expect(result.status).toBe('success');
+    });
+
     test('should handle address with zipCode', async () => {
       // Arrange
       const initializeRequest: InitializeCheckoutRequest = {
@@ -732,6 +820,74 @@ describe('CheckoutService', () => {
       expect(result.data?.subscriptionStatus).toBe('ACTIVE');
     });
 
+    test('should return stored clientReferenceId when retrieving checkout', async () => {
+      // Arrange - First initialize with clientReferenceId
+      const initializeRequest: InitializeCheckoutRequest = {
+        name: 'Retrieve',
+        surname: 'Test',
+        email: 'retrieve.test@example.com',
+        gsmNumber: '5551234567',
+        identityNumber: '30303030303',
+        pricingPlanReferenceCode: 'PLAN_RETRIEVE',
+        callbackUrl: 'https://example.com/callback',
+        clientReferenceId: 'retrieve_ref_123',
+        billingAddress: {
+          contactName: 'Retrieve Test',
+          country: 'Turkey',
+          city: 'Istanbul',
+          address: 'Test Address',
+        },
+        shippingAddress: {
+          contactName: 'Retrieve Test',
+          country: 'Turkey',
+          city: 'Istanbul',
+          address: 'Test Address',
+        },
+      };
+
+      const initResponse: CheckoutFormResponse = {
+        status: 'success',
+        systemTime: 1640995200000,
+        data: {
+          checkoutFormContent: '<html>...</html>',
+          token: 'checkout_token_retrieve_ref',
+        },
+      };
+
+      const mockSubscriptionData: SubscriptionInitData = {
+        referenceCode: 'sub_retrieve_123',
+        parentReferenceCode: 'parent_retrieve_123',
+        pricingPlanReferenceCode: 'PLAN_RETRIEVE',
+        customerReferenceCode: 'customer_retrieve_123',
+        subscriptionStatus: 'ACTIVE',
+        createdDate: 1640995200000,
+        startDate: 1640995200000,
+      };
+
+      const retrieveResponse = {
+        status: 'success',
+        systemTime: 1640995200000,
+        data: mockSubscriptionData,
+      };
+
+      mockClient.request = vi
+        .fn()
+        .mockResolvedValueOnce(initResponse)
+        .mockResolvedValueOnce(retrieveResponse);
+
+      // Act - Initialize first to store the clientReferenceId
+      await checkoutService.initialize(initializeRequest);
+      
+      // Then retrieve
+      const result = await checkoutService.retrieve(
+        initResponse.data!.token
+      );
+
+      // Assert
+      expect(result.clientReferenceId).toBe('retrieve_ref_123');
+      expect(result.data?.referenceCode).toBe('sub_retrieve_123');
+    });
+
     test('should handle server errors during retrieval (5xx)', async () => {
       // Arrange
       const token = 'server_error_token';
@@ -925,6 +1081,65 @@ describe('CheckoutService', () => {
       expect((callArgs.body.paymentCard as PaymentCard).ucsToken).toBe(
         'ucs_token_def'
       );
+    });
+
+    test('should return clientReferenceId when provided in initializeSubscription', async () => {
+      // Arrange
+      const subscriptionRequest: InitializeSubscriptionRequest = {
+        name: 'Jane',
+        surname: 'Doe',
+        email: 'jane.doe@example.com',
+        gsmNumber: '5551234567',
+        identityNumber: '11111111111',
+        pricingPlanReferenceCode: 'PLAN_REF_123',
+        clientReferenceId: 'subscription_ref_xyz',
+        billingAddress: {
+          contactName: 'Jane Doe',
+          country: 'Turkey',
+          city: 'Istanbul',
+          address: 'Test Address 123',
+        },
+        shippingAddress: {
+          contactName: 'Jane Doe',
+          country: 'Turkey',
+          city: 'Istanbul',
+          address: 'Test Address 123',
+        },
+        paymentCard: {
+          cardHolderName: 'Jane Doe',
+          cardNumber: '5528790000000008',
+          expireYear: '2030',
+          expireMonth: '12',
+          cvc: '123',
+        },
+      };
+
+      const mockSubscriptionData: SubscriptionInitData = {
+        referenceCode: 'sub_ref_123',
+        parentReferenceCode: 'parent_ref_123',
+        pricingPlanReferenceCode: 'PLAN_REF_123',
+        customerReferenceCode: 'customer_ref_xyz',
+        subscriptionStatus: 'ACTIVE',
+        createdDate: 1640995200000,
+        startDate: 1640995200000,
+      };
+
+      const expectedResponse: InitializeSubscriptionResponse = {
+        status: 'success',
+        systemTime: 1640995200000,
+        data: mockSubscriptionData,
+      };
+
+      mockClient.request = vi.fn().mockResolvedValue(expectedResponse);
+
+      // Act
+      const result = await checkoutService.initializeSubscription(
+        subscriptionRequest
+      );
+
+      // Assert
+      expect(result.clientReferenceId).toBe('subscription_ref_xyz');
+      expect(result.status).toBe('success');
     });
 
     test('should handle subscription initialization errors', async () => {

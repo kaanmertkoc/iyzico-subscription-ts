@@ -54,157 +54,85 @@ NODE_ENV=development
 
 ## 🔑 Quick Start
 
-### Basic Usage (Node.js/Bun/Deno)
-
 ```typescript
 import { IyzicoClient } from '@kaanmertkoc/iyzico-subs-ts';
 
 const iyzico = new IyzicoClient({
   apiKey: process.env.IYZICO_API_KEY!,
   secretKey: process.env.IYZICO_SECRET_KEY!,
-  isSandbox: process.env.NODE_ENV !== 'production',
-  debug: process.env.NODE_ENV === 'development' // Enable debug logging in development
+  isSandbox: false, // Use production for subscription features
 });
 
-// Create a subscription product
+// 1. Create a product
 const product = await iyzico.products.create({
   name: 'Premium Subscription',
   description: 'Monthly premium plan'
 });
 
-// Create a pricing plan
+// 2. Create a pricing plan
 const plan = await iyzico.plans.create({
   productReferenceCode: product.data.referenceCode,
   name: 'Monthly Plan',
   price: '29.99',
   paymentInterval: 'MONTHLY',
   paymentIntervalCount: 1,
-  currencyCode: 'TRY'
+  currencyCode: 'TRY',
+  planPaymentType: 'RECURRING'
 });
 
-// Create subscription
-const subscription = await iyzico.subscriptions.create({
-  locale: 'tr',
-  customer: {
-    name: 'John',
-    surname: 'Doe',
-    email: 'john@example.com',
-    identityNumber: '11111111111',
-    billingAddress: {
-      contactName: 'John Doe',
-      country: 'Turkey',
-      city: 'Istanbul',
-      address: 'Example Address'
-    }
+// 3. Initialize checkout (3DS)
+const checkout = await iyzico.checkout.initialize({
+  pricingPlanReferenceCode: plan.data.referenceCode,
+  callbackUrl: 'https://yourdomain.com/callback',
+  clientReferenceId: 'order_12345', // Track this checkout
+  name: 'John',
+  surname: 'Doe',
+  email: 'john@example.com',
+  gsmNumber: '+905551234567',
+  identityNumber: '11111111111',
+  billingAddress: {
+    contactName: 'John Doe',
+    country: 'Turkey',
+    city: 'Istanbul',
+    address: 'Example Address 123'
   },
-  paymentCard: {
-    cardHolderName: 'John Doe',
-    cardNumber: '5528790000000008',
-    expireMonth: '12',
-    expireYear: '2030',
-    cvc: '123'
-  },
-  pricingPlanReferenceCode: plan.data.referenceCode
+  shippingAddress: {
+    contactName: 'John Doe',
+    country: 'Turkey',
+    city: 'Istanbul',
+    address: 'Example Address 123'
+  }
 });
+
+// 4. Display checkout form
+const formHtml = checkout.data.checkoutFormContent;
+
+// 5. Handle callback - retrieve result
+const result = await iyzico.checkout.retrieve(tokenFromCallback);
+if (result.status === 'success') {
+  const subscription = result.data;
+  // Activate the subscription
+  await iyzico.subscriptions.activate(subscription.referenceCode);
+}
 ```
 
 ## 📚 Documentation
 
-### Interactive API Documentation
-
-Explore the complete API reference with interactive examples:
+See the [complete API documentation](https://iyzico-docs.kaanmertkoc.com) for detailed information on all available methods and parameters.
 
 - **📖 Interactive Docs**: [iyzico-docs.kaanmertkoc.com](https://iyzico-docs.kaanmertkoc.com)
 - **📄 OpenAPI Spec**: [View on GitHub](https://github.com/kaanmertkoc/iyzico-subscription-ts/blob/main/openapi/openapi.yaml)
-- **⬇️ Download Spec**: [openapi.yaml](https://raw.githubusercontent.com/kaanmertkoc/iyzico-subscription-ts/main/openapi/openapi.yaml)
-
-### Import to Your Tools
-
-You can import the OpenAPI spec directly into your favorite API tools:
-
-**Postman:**
-```bash
-# Import URL
-https://raw.githubusercontent.com/kaanmertkoc/iyzico-subscription-ts/main/openapi/openapi.yaml
-```
-
-**Insomnia/Bruno/Paw:**
-```bash
-# Download and import
-curl -O https://raw.githubusercontent.com/kaanmertkoc/iyzico-subscription-ts/main/openapi/openapi.yaml
-```
-
-**Local Preview:**
-```bash
-# Serve docs locally
-npm run docs:serve
-# Open in browser
-npm run docs:open
-```
-
-For detailed usage examples across different platforms, refer to the cross-platform usage examples included in this README.
-
-
-## 🏗️ API Reference
-
-### Core Services
-
-The SDK provides dedicated services for each API domain:
-
-```typescript
-// Products - Manage subscription products
-iyzico.products.create(data)    // Create product
-iyzico.products.list()          // List products  
-iyzico.products.retrieve(id)    // Get specific product
-iyzico.products.update(id, data) // Update product
-iyzico.products.delete(id)      // Delete product
-
-// Plans - Manage pricing plans
-iyzico.plans.create(data)       // Create plan
-iyzico.plans.list()             // List plans
-iyzico.plans.retrieve(id)       // Get specific plan  
-iyzico.plans.update(id, data)   // Update plan
-iyzico.plans.delete(id)         // Delete plan
-
-// Subscriptions - Manage customer subscriptions
-iyzico.subscriptions.create(data)     // Create subscription
-iyzico.subscriptions.list()           // List subscriptions
-iyzico.subscriptions.retrieve(id)     // Get specific subscription
-iyzico.subscriptions.upgrade(id, data) // Upgrade subscription
-iyzico.subscriptions.cancel(id)       // Cancel subscription
-
-// Checkout - Create checkout forms  
-iyzico.checkout.create(data)    // Create checkout form
-iyzico.checkout.retrieve(id)    // Get checkout result
-
-// Health - Utility methods
-iyzico.health.check()           // API health check
-iyzico.health.binCheck(binNumber) // Card BIN validation
-```
 
 ### Configuration Options
 
 ```typescript
-new IyzicoClient({
-  // Required: Your API credentials
-  apiKey: string;
-  secretKey: string;
-  
-  // Optional: Sandbox credentials (only needed if isSandbox: true)
-  sandboxApiKey?: string;
-  sandboxSecretKey?: string;
-  
-  // Optional: Environment settings
-  isSandbox?: boolean;          // Use sandbox API (default: false)
-  debug?: boolean;              // Enable debug logging (default: false)
-                                // Recommended: process.env.NODE_ENV === 'development'
-  baseUrl?: string;             // Custom API base URL
-  timeout?: number;             // Request timeout in ms (default: 30000)
-  maxRetries?: number;          // Max retry attempts (default: 3)
-  
-  // Optional: Custom headers
-  userAgent?: string;           // Custom user agent
-  defaultHeaders?: Record<string, string>; // Additional headers
+const iyzico = new IyzicoClient({
+  apiKey: string;              // Required
+  secretKey: string;           // Required
+  isSandbox?: boolean;         // Use sandbox (default: false)
+  debug?: boolean;             // Enable debug logs (default: false)
+  timeout?: number;            // Request timeout in ms (default: 30000)
+  maxRetries?: number;         // Retry attempts (default: 3)
 });
 ```
 
