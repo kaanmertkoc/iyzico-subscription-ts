@@ -439,7 +439,7 @@ info:
     ## 📖 About This Documentation
     
     This OpenAPI specification documents the SDK methods you'll use. The endpoints shown are the underlying Iyzico API routes, but you'll interact with them through the SDK's clean interface (e.g., `iyzico.products.create()` instead of manually calling `/v2/subscription/products`).
-  version: 1.0.4
+  version: 1.0.5
   contact:
     name: Kaan Mert Koç
     url: https://github.kaanmertkoc.com
@@ -1081,11 +1081,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/SubscriptionResponse'
 
-  /operation/retry:
+  /v2/subscription/operation/retry:
     post:
       tags: [Subscriptions]
-      summary: Retry a failed payment
+      summary: "SDK: iyzico.subscriptions.retry()"
       operationId: retrySubscription
+      description: |
+        Retries a failed subscription payment.
+        
+        **SDK Usage:**
+        ```typescript
+        // referenceCode is the orderReferenceCode from webhook notification
+        await iyzico.subscriptions.retry('order-ref-from-webhook');
+        ```
       requestBody:
         required: true
         content:
@@ -1095,10 +1103,9 @@ paths:
               required:
                 - referenceCode
               properties:
-                conversationId:
-                  type: string
                 referenceCode:
                   type: string
+                  description: The orderReferenceCode from the failed payment webhook notification
       responses:
         '200':
           description: Payment retry initiated
@@ -1106,6 +1113,129 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SubscriptionResponse'
+
+  # ==================== CUSTOMERS ====================
+  /v2/subscription/customers:
+    get:
+      tags: [Customers]
+      summary: "SDK: iyzico.customers.list()"
+      operationId: listCustomers
+      description: |
+        Lists all customers with pagination support.
+        
+        **SDK Usage:**
+        ```typescript
+        const response = await iyzico.customers.list(1, 10);
+        
+        console.log(response.data.items);      // Array of customers
+        console.log(response.data.totalCount); // Total count
+        console.log(response.data.currentPage); // Current page
+        console.log(response.data.pageCount);  // Total pages
+        ```
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: Page number
+        - name: count
+          in: query
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+          description: Items per page
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /v2/subscription/customers/{customerReferenceCode}:
+    get:
+      tags: [Customers]
+      summary: "SDK: iyzico.customers.retrieve()"
+      operationId: retrieveCustomer
+      description: |
+        Retrieves a specific customer by reference code.
+        
+        **SDK Usage:**
+        ```typescript
+        const customer = await iyzico.customers.retrieve('CUST_123');
+        console.log(customer.data.email);
+        ```
+      parameters:
+        - name: customerReferenceCode
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Customer reference code
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    
+    post:
+      tags: [Customers]
+      summary: "SDK: iyzico.customers.update()"
+      operationId: updateCustomer
+      description: |
+        Updates an existing customer. All fields are optional.
+        
+        **SDK Usage:**
+        ```typescript
+        const updated = await iyzico.customers.update('CUST_123', {
+          name: 'Updated Name',
+          email: 'newemail@example.com',
+          billingAddress: {
+            contactName: 'John Doe',
+            country: 'Turkey',
+            city: 'Istanbul',
+            address: 'New Address 456'
+          }
+        });
+        ```
+        
+        **Note:** Unlike other endpoints, customer update does NOT require `conversationId`.
+      parameters:
+        - name: customerReferenceCode
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Customer reference code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCustomerRequest'
+      responses:
+        '200':
+          description: Customer updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
 
   # ==================== CHECKOUT ====================
   /v2/subscription/checkoutform/initialize:
@@ -1729,6 +1859,59 @@ components:
                   type: string
                 status:
                   type: string
+
+    # ==================== CUSTOMER SCHEMAS ====================
+    UpdateCustomerRequest:
+      type: object
+      description: Request to update customer information. All fields are optional.
+      properties:
+        name:
+          type: string
+          description: Customer first name
+        surname:
+          type: string
+          description: Customer last name
+        email:
+          type: string
+          format: email
+          description: Customer email address
+        gsmNumber:
+          type: string
+          description: Customer phone number
+        identityNumber:
+          type: string
+          description: Turkish identity number (TCKN)
+        billingAddress:
+          $ref: '#/components/schemas/Address'
+        shippingAddress:
+          $ref: '#/components/schemas/Address'
+
+    CustomerResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Customer'
+
+    CustomerListResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                currentPage:
+                  type: integer
+                pageCount:
+                  type: integer
+                totalCount:
+                  type: integer
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Customer'
 
     # ==================== HEALTH SCHEMAS ====================
     BinCheckRequest:
