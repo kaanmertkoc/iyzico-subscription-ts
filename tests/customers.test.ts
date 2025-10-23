@@ -87,7 +87,6 @@ describe('CustomersService', () => {
         path: `/v2/subscription/customers/${referenceCode}`,
         method: 'POST',
         body: {
-          conversationId: expect.stringMatching(/^customer-update-\d+$/),
           name: 'John',
           surname: 'Doe',
           email: 'john.doe@example.com',
@@ -109,86 +108,6 @@ describe('CustomersService', () => {
       });
     });
 
-    test('should generate dynamic conversationId with current timestamp', async () => {
-      // Arrange
-      const referenceCode = 'CUST_TEST';
-      const updateRequest: UpdateCustomerRequest = {
-        name: 'Test',
-        surname: 'User',
-        email: 'test.user@example.com',
-      };
-
-      const mockResponse: UpdateCustomerResponse = {
-        status: 'success',
-        systemTime: 1640995200000,
-        data: {
-          name: 'Test',
-          surname: 'User',
-          email: 'test.user@example.com',
-        },
-      };
-
-      mockClient.request = vi.fn().mockResolvedValue(mockResponse);
-      const beforeTime = Date.now();
-
-      // Act
-      await customersService.update(referenceCode, updateRequest);
-      const afterTime = Date.now();
-
-      // Assert
-      const [callArgs] = (mockClient.request as ReturnType<typeof vi.fn>).mock
-        .calls[0] as [
-        { path: string; method: string; body: Record<string, unknown> }
-      ];
-      const conversationId = callArgs.body.conversationId as string;
-
-      expect(conversationId).toMatch(/^customer-update-\d+$/);
-
-      // Extract timestamp from conversationId and verify it's recent
-      const timestamp = parseInt(
-        conversationId.replace('customer-update-', '')
-      );
-      expect(timestamp).toBeGreaterThanOrEqual(beforeTime);
-      expect(timestamp).toBeLessThanOrEqual(afterTime);
-    });
-
-    test('should handle custom conversationId when provided', async () => {
-      // Arrange
-      const referenceCode = 'CUST_CUSTOM';
-      const updateRequest: UpdateCustomerRequest = {
-        name: 'Custom',
-        surname: 'User',
-        email: 'custom.user@example.com',
-        conversationId: 'custom-conversation-id',
-      };
-
-      const mockResponse: UpdateCustomerResponse = {
-        status: 'success',
-        systemTime: 1640995200000,
-        data: {
-          name: 'Custom',
-          surname: 'User',
-          email: 'custom.user@example.com',
-        },
-      };
-
-      mockClient.request = vi.fn().mockResolvedValue(mockResponse);
-
-      // Act
-      await customersService.update(referenceCode, updateRequest);
-
-      // Assert
-      expect(mockClient.request).toHaveBeenCalledWith({
-        path: `/v2/subscription/customers/${referenceCode}`,
-        method: 'POST',
-        body: {
-          conversationId: 'custom-conversation-id',
-          name: 'Custom',
-          surname: 'User',
-          email: 'custom.user@example.com',
-        },
-      });
-    });
 
     test('should handle partial customer updates', async () => {
       // Arrange
@@ -632,7 +551,43 @@ describe('CustomersService', () => {
 
       expect(mockClient.request).toHaveBeenCalledOnce();
       expect(mockClient.request).toHaveBeenCalledWith({
-        path: '/v2/subscription/customers',
+        path: '/v2/subscription/customers?page=1&count=10',
+        method: 'GET',
+      });
+    });
+
+    test('should support custom pagination parameters', async () => {
+      // Arrange
+      const mockCustomersData: BaseCustomer[] = [
+        {
+          name: 'Page',
+          surname: 'Two',
+          email: 'page2@example.com',
+          gsmNumber: '+905551111111',
+        },
+      ];
+
+      const expectedResponse = {
+        status: 'success',
+        systemTime: 1640995200000,
+        data: {
+          items: mockCustomersData,
+          totalCount: 50,
+          currentPage: 2,
+          pageCount: 5,
+        },
+      };
+
+      mockClient.request = vi.fn().mockResolvedValue(expectedResponse);
+
+      // Act
+      const result = await customersService.list(2, 10);
+
+      // Assert
+      expect(result).toEqual(expectedResponse);
+      expect(result.data?.currentPage).toBe(2);
+      expect(mockClient.request).toHaveBeenCalledWith({
+        path: '/v2/subscription/customers?page=2&count=10',
         method: 'GET',
       });
     });

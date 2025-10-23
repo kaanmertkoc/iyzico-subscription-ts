@@ -32,15 +32,14 @@ export class SubscriptionsService {
 
   /**
    * Retries a failed subscription payment
-   * @param referenceCode - The reference code of the failed payment
+   * @param referenceCode - The reference code of the failed payment (orderReferenceCode from webhook)
    * @returns Promise resolving to the retry response
    */
   async retry(referenceCode: string): Promise<SubscriptionResponse> {
     return this.client.request<SubscriptionResponse>({
-      path: '/operation/retry',
+      path: '/v2/subscription/operation/retry',
       method: 'POST',
       body: {
-        conversationId: `subscription-retry-${Date.now()}`,
         referenceCode,
       },
     });

@@ -26,10 +26,7 @@ export class CustomersService {
     return this.client.request<UpdateCustomerResponse>({
       path: `/v2/subscription/customers/${referenceCode}`,
       method: 'POST',
-      body: {
-        conversationId: `customer-update-${Date.now()}`,
-        ...params,
-      },
+      body: params,
     });
   }
 
@@ -46,12 +43,17 @@ export class CustomersService {
   }
 
   /**
-   * Lists all customers
-   * @returns Promise resolving to the list of customers
+   * Lists all customers with optional pagination
+   * @param page - Page number (optional, defaults to 1)
+   * @param count - Items per page (optional, defaults to 10)
+   * @returns Promise resolving to the paginated list of customers
    */
-  async list(): Promise<ListCustomersResponse> {
+  async list(
+    page: number = 1,
+    count: number = 10
+  ): Promise<ListCustomersResponse> {
     return this.client.request<ListCustomersResponse>({
-      path: '/v2/subscription/customers',
+      path: `/v2/subscription/customers?page=${page}&count=${count}`,
       method: 'GET',
     });
   }
