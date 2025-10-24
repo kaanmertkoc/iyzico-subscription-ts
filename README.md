@@ -122,6 +122,7 @@ See the [complete API documentation](https://iyzico-docs.kaanmertkoc.com) for de
 
 - **📖 Interactive Docs**: [iyzico-docs.kaanmertkoc.com](https://iyzico-docs.kaanmertkoc.com)
 - **📄 OpenAPI Spec**: [View on GitHub](https://github.com/kaanmertkoc/iyzico-subscription-ts/blob/main/openapi/openapi.yaml)
+- **💻 Example App**: See [examples/hono-app](./examples/hono-app) for a complete implementation
 
 ### Configuration Options
 
@@ -474,6 +475,12 @@ All `IyzicoApiError` instances provide these helpful methods:
 | `IyzicoNetworkError` | Network issues, timeouts, DNS failures | ✅ Yes |
 | `IyzicoConfigError` | Invalid SDK configuration | ❌ No - Fix configuration |
 
+## 💻 Example Application
+
+This SDK includes a production-ready example:
+
+- **[Hono App](./examples/hono-app/)** - Lightweight API server demonstrating full Iyzico integration
+
 ## 🛠️ Development
 
 ### Local Development
@@ -492,7 +499,7 @@ npm run build
 # Run tests
 npm test
 
-# Start example app
+# Start example app (Hono)
 npm run dev
 ```
 
