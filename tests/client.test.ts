@@ -42,6 +42,7 @@ describe('IyzicoClient', () => {
       expect(client.plans).toBeDefined();
       expect(client.checkout).toBeDefined();
       expect(client.subscriptions).toBeDefined();
+      expect(client.customers).toBeDefined();
       expect(client.health).toBeDefined();
     });
 

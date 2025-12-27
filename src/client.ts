@@ -15,6 +15,7 @@ import {
   IyzicoSandboxLimitationError,
   isSandboxLimitationError,
 } from './error';
+import { CustomersService } from './services/customers';
 
 export const IYZICO_BASE_URL = 'https://api.iyzipay.com';
 export const IYZICO_SANDBOX_BASE_URL = 'https://sandbox-api.iyzipay.com';
@@ -82,6 +83,8 @@ export class IyzicoClient {
 
   /** Service for health checks and utilities */
   public readonly health: HealthService;
+
+  public readonly customers: CustomersService;
 
   /**
    * Check if client is configured for sandbox environment
@@ -201,6 +204,7 @@ export class IyzicoClient {
     this.checkout = new CheckoutService(this);
     this.subscriptions = new SubscriptionsService(this);
     this.health = new HealthService(this);
+    this.customers = new CustomersService(this);
   }
 
   /**
