@@ -90,7 +90,6 @@ export class AuthManager {
     /* c8 ignore next 5 */
     if (this.config.debug) {
       console.log('[AuthManager] Generated headers for path:', config.path);
-      console.log('[AuthManager] Random key:', randomKey);
       console.log('[AuthManager] Signature length:', signature.length);
     }
 

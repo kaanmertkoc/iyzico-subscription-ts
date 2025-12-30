@@ -24,8 +24,10 @@ describe('IyzicoClient', () => {
     secretKey: 'test-secret-key',
     debug: false,
   };
+  const originalEnvironment = process.env.IYZICO_ENVIRONMENT;
 
   beforeEach(() => {
+    delete process.env.IYZICO_ENVIRONMENT;
     client = new IyzicoClient(validOptions);
     fetchMock.mockClear();
   });
@@ -33,6 +35,11 @@ describe('IyzicoClient', () => {
   afterEach(() => {
     fetchMock.mockReset();
     vi.clearAllMocks();
+    if (originalEnvironment === undefined) {
+      delete process.env.IYZICO_ENVIRONMENT;
+    } else {
+      process.env.IYZICO_ENVIRONMENT = originalEnvironment;
+    }
   });
 
   describe('initialization', () => {
@@ -104,6 +111,41 @@ describe('IyzicoClient', () => {
       expect(config.baseUrl).toBe(IYZICO_SANDBOX_BASE_URL);
       expect(config.isSandbox).toBe(true);
       expect(config.environment).toBe('sandbox');
+    });
+
+    test('should force sandbox when IYZICO_ENVIRONMENT is sandbox', () => {
+      process.env.IYZICO_ENVIRONMENT = 'sandbox';
+
+      const sandboxClient = new IyzicoClient({
+        isSandbox: false,
+        sandboxApiKey: 'test-sandbox-api',
+        sandboxSecretKey: 'test-sandbox-secret',
+      });
+
+      const config = sandboxClient.getConfig();
+      expect(config.baseUrl).toBe(IYZICO_SANDBOX_BASE_URL);
+      expect(config.isSandbox).toBe(true);
+      expect(config.environment).toBe('sandbox');
+    });
+
+    test('should require sandbox credentials when IYZICO_ENVIRONMENT is sandbox', () => {
+      process.env.IYZICO_ENVIRONMENT = 'sandbox';
+
+      expect(
+        () =>
+          new IyzicoClient({
+            sandboxSecretKey: 'test-sandbox-secret',
+          })
+      ).toThrow(
+        'Iyzico Sandbox API Key is required when isSandbox is enabled.'
+      );
+
+      expect(
+        () =>
+          new IyzicoClient({
+            sandboxSecretKey: 'test-sandbox-secret',
+          })
+      ).toThrowError(IyzicoConfigError);
     });
 
     test('should allow custom baseUrl to override sandbox URL', () => {
@@ -857,7 +899,6 @@ describe('IyzicoClient', () => {
           baseUrl: `${IYZICO_SANDBOX_BASE_URL}`,
           isSandbox: true,
           environment: 'sandbox',
-          apiKey: expect.any(String),
         })
       );
 
