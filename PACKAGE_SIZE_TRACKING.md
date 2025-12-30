@@ -16,6 +16,12 @@ View all tracked package sizes across versions:
 📜 Package Size History
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+v1.0.7 - Dec 30, 2025, 11:09 PM
+  📦 Zipped:   43.71 KB
+  📂 Unzipped: 265.01 KB
+  📁 Files:    117
+  📈 +0.53 KB (1.21%) vs v1.0.6
+
 v1.0.6 - Dec 27, 2025, 06:29 PM
   📦 Zipped:   43.19 KB
   📂 Unzipped: 262.52 KB
