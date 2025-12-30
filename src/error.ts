@@ -86,7 +86,9 @@ export interface IyzicoClientOptions extends IyzicoOptions {
   maxRetries?: number;
   /** Enable debug logging (default: false) */
   debug?: boolean;
-  /** Use sandbox environment instead of production (default: false) */
+  /** Use sandbox environment instead of production (default: false).
+   * If IYZICO_ENVIRONMENT is set to "sandbox", sandbox mode is forced.
+   */
   isSandbox?: boolean;
   /** Authentication manager configuration */
   authConfig?: AuthManagerConfig;

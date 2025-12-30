@@ -29,9 +29,13 @@ export enum CurrencyCode {
  * SDK Configuration options for initializing the Iyzico client
  */
 export interface IyzicoOptions {
-  apiKey: string;
-  secretKey: string;
+  /** Production API key (required unless sandbox mode is enabled). */
+  apiKey?: string;
+  /** Production secret key (required unless sandbox mode is enabled). */
+  secretKey?: string;
+  /** Sandbox API key (required when sandbox mode is enabled). */
   sandboxApiKey?: string;
+  /** Sandbox secret key (required when sandbox mode is enabled). */
   sandboxSecretKey?: string;
   baseUrl?: string;
 }

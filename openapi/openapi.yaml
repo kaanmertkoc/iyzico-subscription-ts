@@ -30,12 +30,13 @@ info:
     Create a `.env` file in your project root:
     
     ```env
-    # Production credentials (required)
+    # Production credentials (required unless sandbox)
     IYZICO_API_KEY=your_production_api_key
     IYZICO_SECRET_KEY=your_production_secret_key
     IYZICO_ENVIRONMENT=production # production or sandbox (default: production)
+    # When set to sandbox, the SDK forces sandbox mode automatically.
     
-    # Sandbox credentials (optional, only if using sandbox)
+    # Sandbox credentials (required in sandbox)
     IYZICO_SANDBOX_API_KEY=your_sandbox_api_key
     IYZICO_SANDBOX_SECRET_KEY=your_sandbox_secret_key
     
@@ -49,9 +50,11 @@ info:
     import { IyzicoClient } from '@kaanmertkoc/iyzico-subs-ts';
     
     const iyzico = new IyzicoClient({
-      apiKey: process.env.IYZICO_API_KEY!,
-      secretKey: process.env.IYZICO_SECRET_KEY!,
-      isSandbox: process.env.NODE_ENV !== 'production',
+      apiKey: process.env.IYZICO_API_KEY,
+      secretKey: process.env.IYZICO_SECRET_KEY,
+      sandboxApiKey: process.env.IYZICO_SANDBOX_API_KEY,
+      sandboxSecretKey: process.env.IYZICO_SANDBOX_SECRET_KEY,
+      // IYZICO_ENVIRONMENT=sandbox forces sandbox mode automatically.
       debug: process.env.NODE_ENV === 'development' // Enable debug logging in development
     });
     
@@ -77,16 +80,16 @@ info:
     
     ```typescript
     new IyzicoClient({
-      // Required: Your API credentials
-      apiKey: string;
-      secretKey: string;
+      // Required: Production credentials (unless sandbox)
+      apiKey?: string;
+      secretKey?: string;
       
-      // Optional: Sandbox credentials (only needed if isSandbox: true)
+      // Required in sandbox
       sandboxApiKey?: string;
       sandboxSecretKey?: string;
       
       // Optional: Environment settings
-      isSandbox?: boolean;          // Use sandbox API (default: false)
+      isSandbox?: boolean;          // Use sandbox API (default: false, overridden by IYZICO_ENVIRONMENT=sandbox)
       debug?: boolean;              // Enable debug logging (default: false)
                                     // Recommended: process.env.NODE_ENV === 'development'
       baseUrl?: string;             // Custom API base URL
@@ -229,9 +232,11 @@ info:
     import { IyzicoClient } from '@kaanmertkoc/iyzico-subs-ts';
     
     const iyzico = new IyzicoClient({
-      apiKey: process.env.IYZICO_API_KEY!,
-      secretKey: process.env.IYZICO_SECRET_KEY!,
-      isSandbox: process.env.NODE_ENV !== 'production',
+      apiKey: process.env.IYZICO_API_KEY,
+      secretKey: process.env.IYZICO_SECRET_KEY,
+      sandboxApiKey: process.env.IYZICO_SANDBOX_API_KEY,
+      sandboxSecretKey: process.env.IYZICO_SANDBOX_SECRET_KEY,
+      // IYZICO_ENVIRONMENT=sandbox forces sandbox mode automatically.
       debug: process.env.NODE_ENV === 'development'
     });
     
@@ -250,7 +255,9 @@ info:
         const iyzico = new IyzicoClient({
           apiKey: env.IYZICO_API_KEY,
           secretKey: env.IYZICO_SECRET_KEY,
-          isSandbox: env.ENVIRONMENT !== 'production'
+          sandboxApiKey: env.IYZICO_SANDBOX_API_KEY,
+          sandboxSecretKey: env.IYZICO_SANDBOX_SECRET_KEY,
+          isSandbox: env.IYZICO_ENVIRONMENT === 'sandbox'
         });
         
         const subscriptions = await iyzico.subscriptions.list();
@@ -267,9 +274,11 @@ info:
     
     export default async function handler(request) {
       const iyzico = new IyzicoClient({
-        apiKey: process.env.IYZICO_API_KEY!,
-        secretKey: process.env.IYZICO_SECRET_KEY!,
-        isSandbox: true
+        apiKey: process.env.IYZICO_API_KEY,
+        secretKey: process.env.IYZICO_SECRET_KEY,
+        sandboxApiKey: process.env.IYZICO_SANDBOX_API_KEY,
+        sandboxSecretKey: process.env.IYZICO_SANDBOX_SECRET_KEY,
+        // IYZICO_ENVIRONMENT=sandbox forces sandbox mode automatically.
       });
       
       const result = await iyzico.health.check();
@@ -439,7 +448,7 @@ info:
     ## 📖 About This Documentation
     
     This OpenAPI specification documents the SDK methods you'll use. The endpoints shown are the underlying Iyzico API routes, but you'll interact with them through the SDK's clean interface (e.g., `iyzico.products.create()` instead of manually calling `/v2/subscription/products`).
-  version: 1.0.6
+  version: 1.0.7
   contact:
     name: Kaan Mert Koç
     url: https://github.kaanmertkoc.com

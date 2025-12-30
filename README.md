@@ -41,12 +41,13 @@ Create a `.env` file:
 # Production credentials
 IYZICO_API_KEY=your_production_api_key
 IYZICO_SECRET_KEY=your_production_secret_key
-IYZICO_ENVIRONMENT=production # production or sandbox  (default: production because of sandbox limitations)
-
+IYZICO_ENVIRONMENT=production # production or sandbox (default: production because of sandbox limitations)
+# When set to sandbox, the SDK forces sandbox mode automatically.
 
 # Sandbox credentials (optional, only if using sandbox)
 IYZICO_SANDBOX_API_KEY=your_sandbox_api_key
 IYZICO_SANDBOX_SECRET_KEY=your_sandbox_secret_key
+# In sandbox mode, only sandbox keys are required.
 
 # Environment
 NODE_ENV=development
@@ -128,9 +129,9 @@ See the [complete API documentation](https://iyzico-docs.kaanmertkoc.com) for de
 
 ```typescript
 const iyzico = new IyzicoClient({
-  apiKey: string;              // Required
-  secretKey: string;           // Required
-  isSandbox?: boolean;         // Use sandbox (default: false)
+  apiKey?: string;             // Required unless sandbox
+  secretKey?: string;          // Required unless sandbox
+  isSandbox?: boolean;         // Use sandbox (default: false, overridden by IYZICO_ENVIRONMENT=sandbox)
   debug?: boolean;             // Enable debug logs (default: false)
   timeout?: number;            // Request timeout in ms (default: 30000)
   maxRetries?: number;         // Retry attempts (default: 3)

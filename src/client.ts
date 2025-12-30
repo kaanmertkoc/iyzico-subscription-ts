@@ -20,6 +20,20 @@ import { CustomersService } from './services/customers';
 export const IYZICO_BASE_URL = 'https://api.iyzipay.com';
 export const IYZICO_SANDBOX_BASE_URL = 'https://sandbox-api.iyzipay.com';
 
+const SANDBOX_ENV_VALUE = 'sandbox';
+
+const isSandboxEnvironment = (): boolean => {
+  if (typeof process === 'undefined' || !process.env) {
+    return false;
+  }
+
+  const environment = process.env.IYZICO_ENVIRONMENT;
+  return (
+    typeof environment === 'string' &&
+    environment.toLowerCase() === SANDBOX_ENV_VALUE
+  );
+};
+
 /**
  * The main client for interacting with the Iyzico v2 Subscription API.
  *
@@ -57,8 +71,12 @@ export class IyzicoClient {
       | 'authConfig'
       | 'userAgent'
       | 'defaultHeaders'
+      | 'apiKey'
+      | 'secretKey'
     >
   > & {
+    apiKey?: string;
+    secretKey?: string;
     sandboxApiKey?: string;
     sandboxSecretKey?: string;
     authConfig?: AuthManagerConfig;
@@ -94,23 +112,26 @@ export class IyzicoClient {
   }
 
   constructor(options: IyzicoClientOptions) {
-    // Validate required options
-    if (!options.apiKey?.trim()) {
-      throw new IyzicoConfigError(
-        'Iyzico API Key is required and cannot be empty.',
-        'apiKey'
-      );
+    const envIsSandbox = isSandboxEnvironment();
+    const resolvedIsSandbox = envIsSandbox || options.isSandbox || false;
+
+    if (!resolvedIsSandbox) {
+      if (!options.apiKey?.trim()) {
+        throw new IyzicoConfigError(
+          'Iyzico API Key is required and cannot be empty.',
+          'apiKey'
+        );
+      }
+
+      if (!options.secretKey?.trim()) {
+        throw new IyzicoConfigError(
+          'Iyzico Secret Key is required and cannot be empty.',
+          'secretKey'
+        );
+      }
     }
 
-    if (!options.secretKey?.trim()) {
-      throw new IyzicoConfigError(
-        'Iyzico Secret Key is required and cannot be empty.',
-        'secretKey'
-      );
-    }
-
-    // Validate sandbox keys only if sandbox mode is enabled
-    if (options.isSandbox) {
+    if (resolvedIsSandbox) {
       if (!options.sandboxApiKey?.trim()) {
         throw new IyzicoConfigError(
           'Iyzico Sandbox API Key is required when isSandbox is enabled.',
@@ -127,9 +148,11 @@ export class IyzicoClient {
     }
 
     // Determine the appropriate base URL based on environment
-    const defaultBaseUrl = options.isSandbox
+    const defaultBaseUrl = resolvedIsSandbox
       ? IYZICO_SANDBOX_BASE_URL // Sandbox environment
       : IYZICO_BASE_URL; // Production environment
+
+    const { apiKey, secretKey, ...restOptions } = options;
 
     // Set defaults and validate options
     this.options = {
@@ -137,9 +160,11 @@ export class IyzicoClient {
       timeout: 30000, // 30 seconds
       maxRetries: 3,
       debug: false,
-      isSandbox: options.isSandbox || false,
       defaultHeaders: {},
-      ...options,
+      ...restOptions,
+      isSandbox: resolvedIsSandbox,
+      ...(apiKey !== undefined ? { apiKey } : {}),
+      ...(secretKey !== undefined ? { secretKey } : {}),
     };
 
     // Initialize authentication manager
@@ -194,7 +219,6 @@ export class IyzicoClient {
         maxRetries: this.options.maxRetries,
         isSandbox: this.options.isSandbox,
         environment: this.options.isSandbox ? 'sandbox' : 'production',
-        apiKey: `${this.options.apiKey.substring(0, 8)}...`,
       });
     }
 
@@ -254,10 +278,10 @@ export class IyzicoClient {
     const authResult = this.authManager.generateAuthHeaders({
       apiKey: this.options.isSandbox
         ? this.options.sandboxApiKey!
-        : this.options.apiKey,
+        : this.options.apiKey!,
       secretKey: this.options.isSandbox
         ? this.options.sandboxSecretKey!
-        : this.options.secretKey,
+        : this.options.secretKey!,
       path: pathWithoutQuery,
       body: requestBodyString,
     });
