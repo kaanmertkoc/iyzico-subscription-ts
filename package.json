@@ -1,6 +1,6 @@
 {
   "name": "@kaanmertkoc/iyzico-subs-ts",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Modern TypeScript SDK for Iyzico Subscription API - Cross-platform compatible",
   "author": "Kaan Mert Koç <kaanmertkocbursa@gmail.com>",
   "license": "MIT",
@@ -33,30 +33,38 @@
     "examples/*"
   ],
   "exports": {
-    "types": "./dist/types/index.d.ts",
-    "browser": {
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js"
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "browser": {
+        "import": "./dist/esm/index.js",
+        "require": "./dist/cjs/index.js"
+      },
+      "bun": {
+        "import": "./dist/esm/index.js",
+        "require": "./dist/cjs/index.js"
+      },
+      "deno": {
+        "import": "./dist/esm/index.js",
+        "require": "./dist/cjs/index.js"
+      },
+      "worker": {
+        "import": "./dist/esm/index.js",
+        "require": "./dist/cjs/index.js"
+      },
+      "workerd": {
+        "import": "./dist/esm/index.js",
+        "require": "./dist/cjs/index.js"
+      },
+      "default": {
+        "import": "./dist/esm/index.js",
+        "require": "./dist/cjs/index.js"
+      }
     },
-    "bun": {
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js"
-    },
-    "deno": {
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js"
-    },
-    "worker": {
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js"
-    },
-    "workerd": {
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js"
-    },
-    "default": {
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js"
+    "./types": {
+      "types": "./dist/types/types/index.d.ts",
+      "import": "./dist/esm/types/index.js",
+      "require": "./dist/cjs/types/index.js",
+      "default": "./dist/esm/types/index.js"
     }
   },
   "files": [
