@@ -31,4 +31,5 @@ export const iyzico = new IyzicoClient({
 export const iyzicoMinimal = new IyzicoClient({
   apiKey,
   secretKey,
+  isSandbox: false,
 });

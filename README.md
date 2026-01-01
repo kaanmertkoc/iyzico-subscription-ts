@@ -33,6 +33,23 @@ pnpm add @kaanmertkoc/iyzico-subs-ts
 deno add @kaanmertkoc/iyzico-subs-ts
 ```
 
+### Types-only entrypoint (browser-safe)
+
+```typescript
+import {
+  CurrencyCode,
+  PaymentInterval,
+  PlanPaymentType,
+} from '@kaanmertkoc/iyzico-subs-ts/types';
+import type {
+  CreateProductRequest,
+  ListSubscriptionsResponse,
+} from '@kaanmertkoc/iyzico-subs-ts/types';
+```
+
+This entrypoint only re-exports types and enums and avoids Node-only modules
+like `node:crypto`.
+
 ### Environment Variables
 
 Create a `.env` file:
