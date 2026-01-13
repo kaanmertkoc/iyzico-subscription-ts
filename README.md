@@ -125,7 +125,7 @@ const checkout = await iyzico.checkout.initialize({
 // 4. Display checkout form
 const formHtml = checkout.data.checkoutFormContent;
 
-// 5. Handle callback - retrieve result
+// 5. Handle callback - retrieve result (GET /v2/subscription/checkoutform/{token})
 const result = await iyzico.checkout.retrieve(tokenFromCallback);
 if (result.status === 'success') {
   const subscription = result.data;

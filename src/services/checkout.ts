@@ -118,14 +118,12 @@ export class CheckoutService {
    * @param token - The checkout form token received from the callback
    * @returns Promise resolving to the checkout form result data
    */
-  async retrieve(token: string): Promise<BaseResponse<SubscriptionInitData> & { clientReferenceId?: string }> {
+  async retrieve(
+    token: string
+  ): Promise<BaseResponse<SubscriptionInitData> & { clientReferenceId?: string }> {
     const response = await this.client.request<BaseResponse<SubscriptionInitData>>({
       path: `/v2/subscription/checkoutform/${token}`,
-      method: 'POST',
-      body: {
-        conversationId: `checkout-retrieve-${Date.now()}`,
-        token,
-      },
+      method: 'GET',
     });
 
     if (this.client_reference_id) {
