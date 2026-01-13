@@ -1284,7 +1284,7 @@ paths:
                 $ref: '#/components/schemas/CheckoutFormResponse'
 
   /v2/subscription/checkoutform/{token}:
-    post:
+    get:
       tags: [Checkout]
       summary: Retrieve checkout result
       operationId: retrieveCheckout
@@ -1295,17 +1295,6 @@ paths:
           required: true
           schema:
             type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                conversationId:
-                  type: string
-                token:
-                  type: string
       responses:
         '200':
           description: Checkout result retrieved
