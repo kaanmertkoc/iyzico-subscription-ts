@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://iyzico-docs.kaanmertkoc.com/sitemap.xml
