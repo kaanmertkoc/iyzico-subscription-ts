@@ -30,6 +30,7 @@ bun run build             # clean, then ESM + CJS + .d.ts builds into dist/
 bun run size              # pack the package and report zipped/unzipped size
 bun run size:track        # same, and record the result in .package-size-history.json
 bun dev                   # run examples/hono-app with hot reload (needs .env.local)
+bun run --cwd examples/hono-app typecheck   # typecheck the Hono example (build the SDK first)
 bun run docs:sync         # copy openapi/openapi.yaml into openapi/docs/
 bun run docs:serve        # serve the docs site locally
 ```

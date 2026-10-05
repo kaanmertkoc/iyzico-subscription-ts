@@ -5,15 +5,16 @@
     "dev": "bun --env-file=.env.local --watch src/index.ts",
     "start": "bun src/index.ts",
     "build": "bun build src/index.ts --outdir dist --target bun",
-    "preview": "bun dist/index.js"
+    "preview": "bun dist/index.js",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "hono": "^4.9.8",
+    "@hono/zod-validator": "^0.9.1",
     "@kaanmertkoc/iyzico-subs-ts": "file:../..",
-    "zod": "^3.22.4",
-    "@hono/zod-validator": "^0.2.2"
+    "hono": "^4.13.13",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
-    "bun-types": "latest"
+    "@types/bun": "^1.3.5"
   }
 }
