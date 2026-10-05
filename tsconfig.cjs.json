@@ -4,7 +4,7 @@
     "outDir": "./dist/cjs",
     "module": "CommonJS",
     "target": "ES2020",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "declaration": false,
     "declarationMap": false,
     "esModuleInterop": true,

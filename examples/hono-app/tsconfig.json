@@ -36,15 +36,10 @@
     "preserveWatchOutput": true,
 
     // Bun & Hono Support
-    "types": ["bun-types"],
+    "types": ["bun"],
     "allowImportingTsExtensions": false,
     "verbatimModuleSyntax": false,
-
-    // Path Mapping for Workspace Dependencies
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "noEmit": true
   },
   "include": ["src/**/*", "lib/**/*"],
   "exclude": ["node_modules", "dist"]

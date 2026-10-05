@@ -1,10 +1,11 @@
 # Dependencies
 node_modules/
 
-# Documentation (ignore all .md files except README.md and PACKAGE_SIZE_TRACKING.md)
+# Documentation (ignore all .md files except README.md, PACKAGE_SIZE_TRACKING.md and AGENTS.md)
 *.md
 !README.md
 !PACKAGE_SIZE_TRACKING.md
+!AGENTS.md
 
 # Build outputs
 dist/
