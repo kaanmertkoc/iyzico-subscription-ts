@@ -81,7 +81,7 @@
     "build:cjs": "tsc -p tsconfig.cjs.json",
     "build:types": "tsc -p tsconfig.types.json",
     "typecheck": "tsc --noEmit",
-    "dev": "bun --cwd examples/hono-app run dev",
+    "dev": "bun run --cwd examples/hono-app dev",
     "dev:install": "cd examples/hono-app && bun install",
     "docs:sync": "cp openapi/openapi.yaml openapi/docs/openapi.yaml",
     "docs:serve": "bun --hot openapi/docs/server.ts",
