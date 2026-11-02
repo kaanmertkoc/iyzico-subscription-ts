@@ -6,7 +6,9 @@ Guidance for AI coding agents working in this repository.
 
 `@kaanmertkoc/iyzico-subs-ts` is an open-source, runtime-agnostic TypeScript SDK for the
 [Iyzico](https://www.iyzico.com) v2 Subscription API. It is published to npm and runs on
-Node.js (>=18), Bun, Deno, browsers, and edge/worker runtimes.
+Node.js (>=18), Bun, and runtimes with compatible Node APIs. The full client imports
+`node:crypto`; browser and edge/worker consumers need a compatible shim. The `./types`
+entrypoint does not import `node:crypto` and is browser-safe.
 
 - **SDK (repo root)**: `src/` is the published library, `tests/` holds its test suite.
 - **`examples/hono-app`**: Hono + Zod REST API that consumes the SDK via `file:../..`.
@@ -15,6 +17,7 @@ Node.js (>=18), Bun, Deno, browsers, and edge/worker runtimes.
 
 ## Commands
 
+Bun 1.4.4 is pinned in `.bun-version`, `packageManager`, and the Dockerfiles.
 Bun is the package manager and script runner. Tests use **Vitest**, so run them with
 `bun run test`, not `bun test` (that starts Bun's own test runner).
 
