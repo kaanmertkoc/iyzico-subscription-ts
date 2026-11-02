@@ -663,15 +663,11 @@ describe('CheckoutService', () => {
       expect(mockClient.request).toHaveBeenCalledOnce();
       expect(mockClient.request).toHaveBeenCalledWith({
         path: `/v2/subscription/checkoutform/${token}`,
-        method: 'POST',
-        body: {
-          conversationId: expect.stringMatching(/^checkout-retrieve-\d+$/),
-          token: token,
-        },
+        method: 'GET',
       });
     });
 
-    test('should generate dynamic conversationId for retrieve', async () => {
+    test('should retrieve without a request body', async () => {
       // Arrange
       const token = 'checkout_token_test';
       const mockResponse = {
@@ -684,27 +680,17 @@ describe('CheckoutService', () => {
       };
 
       mockClient.request = vi.fn().mockResolvedValue(mockResponse);
-      const beforeTime = Date.now();
 
       // Act
       await checkoutService.retrieve(token);
-      const afterTime = Date.now();
 
       // Assert
       const [callArgs] = (mockClient.request as ReturnType<typeof vi.fn>).mock
         .calls[0] as [
-        { path: string; method: string; body: Record<string, unknown> }
+        { path: string; method: string; body?: Record<string, unknown> }
       ];
-      const conversationId = callArgs.body.conversationId as string;
-
-      expect(conversationId).toMatch(/^checkout-retrieve-\d+$/);
-
-      // Extract timestamp from conversationId and verify it's recent
-      const timestamp = parseInt(
-        conversationId.replace('checkout-retrieve-', '')
-      );
-      expect(timestamp).toBeGreaterThanOrEqual(beforeTime);
-      expect(timestamp).toBeLessThanOrEqual(afterTime);
+      expect(callArgs.method).toBe('GET');
+      expect(callArgs).not.toHaveProperty('body');
     });
 
     test('should handle token not found error', async () => {
@@ -724,11 +710,7 @@ describe('CheckoutService', () => {
 
       expect(mockClient.request).toHaveBeenCalledWith({
         path: `/v2/subscription/checkoutform/${token}`,
-        method: 'POST',
-        body: {
-          conversationId: expect.stringMatching(/^checkout-retrieve-\d+$/),
-          token: token,
-        },
+        method: 'GET',
       });
     });
 

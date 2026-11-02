@@ -29,6 +29,7 @@
   "module": "dist/esm/index.js",
   "types": "dist/types/index.d.ts",
   "private": false,
+  "packageManager": "bun@1.4.4",
   "workspaces": [
     "examples/*"
   ],
@@ -98,10 +99,10 @@
     "node": ">=18.0.0"
   },
   "devDependencies": {
-    "@types/bun": "^1.3.5",
-    "@types/node": "^20.0.0",
-    "@vitest/coverage-v8": "4.0.16",
+    "@types/bun": "^1.4.4",
+    "@types/node": "^20.19.43",
+    "@vitest/coverage-v8": "4.1.12",
     "typescript": "7.0.2",
-    "vitest": "^4.0.16"
+    "vitest": "4.1.12"
   }
 }
